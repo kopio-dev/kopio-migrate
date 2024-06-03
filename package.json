@@ -1,0 +1,24 @@
+{
+  "name": "forge-safe",
+  "module": "index.ts",
+  "type": "module",
+  "author": "panukettu",
+  "scripts": {
+    "test:ci": "forge test --mt KreskoScriptSafe -vvv",
+    "pyth-upkeep": "bun run src/ts/pyth-upkeep.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.6",
+    "@trezor/connect": "^9.2.2",
+    "csv": "^6.3.9",
+    "eth-provider": "^0.13.6",
+    "glob": "^10.3.12",
+    "viem": "^2.9.25"
+  }
+}

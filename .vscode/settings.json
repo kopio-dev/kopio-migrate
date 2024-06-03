@@ -1,0 +1,12 @@
+{
+  "solidity.project.monorepo": false,
+  "solidity.project.sources": "src",
+  "solidity.project.libs": [
+    "lib"
+  ],
+  "solidity.compiler.location": "Remote",
+  "solidity.compiler.version.remote": "v0.8.25+commit.b61c2a91",
+  "solidity.compiler.version.local": "/Users/panukettunen/projects/kresko-liquidator/soljson-v0.8.25+commit.b61c2a91.js",
+  "solidity.test.executeOnSave": true,
+  "solidity.linter.type": ""
+}

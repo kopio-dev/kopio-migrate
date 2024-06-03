@@ -1,0 +1,47 @@
+name: test
+
+on: push
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  check:
+    name: foundry-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: install npm deps
+        run: bun install
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Run Tests
+        run: |
+          bun run test:ci
+        env:
+          KREDITS_NETWORK: 'arbitrum'
+          KRESKO_NETWORK: 'arbitrum'
+          SAFE_NETWORK: 'arbitrum'
+          SAFE_ADDRESS: '0x266489Bde85ff0dfe1ebF9f0a7e6Fed3a973cEc3'
+          SAFE_CHAIN_ID: 42161
+          KRESKO_FORK: 'kresko-fork'
+          KREDITS_FORK: 'kredits-fork'
+          MNEMONIC: ${{ secrets.MNEMONIC_CI }}
+          RPC_ARBITRUM_ALCHEMY: ${{ secrets.RPC_ARBITRUM_ALCHEMY }}
