@@ -2,7 +2,7 @@
 // solhint-disable
 
 pragma solidity ^0.8.0;
-import {Deployment, IDeploymentFactory} from "./IDeploymentFactory.sol";
+import {Deployment, IDeploymentFactory} from "c/factory/IDeploymentFactory.sol";
 import {mvm} from "kr/utils/MinVm.s.sol";
 
 library Factory {

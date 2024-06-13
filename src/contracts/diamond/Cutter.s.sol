@@ -12,6 +12,7 @@ import {Scripted} from "kr/utils/Scripted.s.sol";
 
 contract Cutter is Scripted, FacetScript("./utils/getFunctionSelectors.sh") {
     using Help for *;
+    using Log for *;
     using Factory for bytes;
 
     enum CreateMode {
@@ -22,6 +23,7 @@ contract Cutter is Scripted, FacetScript("./utils/getFunctionSelectors.sh") {
 
     IDiamondCut diamond;
     FacetCut[] cuts;
+    string[] _files;
     Initializer initializer;
 
     CreateMode createMode = CreateMode.Create1;
@@ -77,6 +79,33 @@ contract Cutter is Scripted, FacetScript("./utils/getFunctionSelectors.sh") {
         require(facets.length == 1, "Only one facet should be returned");
         for (uint256 i; i < facets.length; i++) {
             handleFacet(files[i], facets[i], selectors[i]);
+        }
+    }
+
+    function logCuts() internal view {
+        cuts.length.clg("FacetCuts:");
+        for (uint256 i; i < cuts.length; i++) {
+            Log.br();
+            Log.hr();
+            _files[i].clg(string.concat("[CUT #", i.str(), "]"));
+            cuts[i].facetAddress.clg("Facet Address");
+            uint8(cuts[i].action).clg("Action");
+            uint256 selectorLength = cuts[i].functionSelectors.length;
+
+            string memory selectorStr = "[";
+            for (uint256 sel; sel < selectorLength; sel++) {
+                selectorStr = string.concat(
+                    selectorStr,
+                    string(
+                        abi.encodePacked(cuts[i].functionSelectors[sel]).str()
+                    ),
+                    sel == selectorLength - 1 ? "" : ","
+                );
+            }
+            string.concat(selectorStr, "]").clg(
+                string.concat("Selectors (", selectorLength.str(), ")")
+            );
+            selectorLength.clg("Selector Count");
         }
     }
 
@@ -137,6 +166,15 @@ contract Cutter is Scripted, FacetScript("./utils/getFunctionSelectors.sh") {
                     functionSelectors: oldSelectors
                 })
             );
+            _files.push(
+                string.concat(
+                    "Remove Facet -> ",
+                    fileName,
+                    " (",
+                    oldFacet.str(),
+                    ")"
+                )
+            );
         }
         Factory.JSONKey(fileName);
         Factory.setJsonNumber("oldSelectors", oldSelectors.length);
@@ -150,6 +188,7 @@ contract Cutter is Scripted, FacetScript("./utils/getFunctionSelectors.sh") {
                 functionSelectors: selectors
             })
         );
+        _files.push(string.concat("New Facet -> ", fileName));
         Factory.setJsonNumber("newSelectors", selectors.length);
         Factory.saveJSONKey();
     }

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 import {SafeTx} from "c/safe/SafeTx.s.sol";
-import {Utils} from "c/safe/Utils.s.sol";
 import {KrBase} from "c/base/KrBase.s.sol";
 import {Help, Log} from "kr/utils/Libs.s.sol";
-import {Asset} from "kr/core/types/Data.sol";
 
 contract KreskoScriptSafe is KrBase, SafeTx {
     using Log for *;

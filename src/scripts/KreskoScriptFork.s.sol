@@ -3,13 +3,8 @@
 pragma solidity ^0.8.13;
 
 import {Help, Log} from "kr/utils/Libs.s.sol";
-import {Asset, Enums, VaultAsset} from "kr/core/types/Data.sol";
-import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
-import {Roles} from "kr/token/IKresko1155.sol";
-import {ClaimEvent} from "kr/core/IKreditsDiamond.sol";
+import {Enums} from "kr/core/types/Data.sol";
 import {ForkBase} from "c/base/ForkBase.s.sol";
-import {SwapArgs} from "kr/core/types/Args.sol";
-import {IERC20} from "../../lib/forge-std/src/interfaces/IERC20.sol";
 import {ICommonConfigFacet} from "kr/core/IKresko.sol";
 
 contract KreskoScriptFork is ForkBase {

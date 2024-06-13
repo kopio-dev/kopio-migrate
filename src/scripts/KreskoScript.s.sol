@@ -15,7 +15,10 @@ contract KreskoScript is KrBase {
 
     function setUp() public virtual override {
         KrBase.setUp();
-        vm.createSelectFork(getEnv("KRESKO_NETWORK", "RPC_ARBITRUM_ALCHEMY"));
+        vm.createSelectFork(
+            getEnv("KRESKO_NETWORK", "RPC_ARBITRUM_ALCHEMY"),
+            221214412
+        );
     }
 
     function execKresko() public broadcasted(sender) {

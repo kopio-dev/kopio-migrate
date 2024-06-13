@@ -6,11 +6,12 @@ import {ArbDeploy} from "kr/info/ArbDeploy.sol";
 import {PythBase} from "c/ffi/ffi-pyth.s.sol";
 import {IKreditsDiamond, ClaimEvent} from "kr/core/IKreditsDiamond.sol";
 import {Cutter} from "c/diamond/Cutter.s.sol";
+import {IKresko} from "kr/core/IKresko.sol";
 
 contract KrBase is Cutter, PythBase, ArbDeploy {
     address sender;
-    IKreditsDiamond kredits =
-        IKreditsDiamond(0x8E84a3B8e0b074c149b8277c753Dc6396bB95F48);
+    IKresko constant kresko = IKresko(kreskoAddr);
+    IKreditsDiamond constant kredits = IKreditsDiamond(kreditsAddr);
 
     function setUp() public virtual {
         useMnemonic("MNEMONIC");

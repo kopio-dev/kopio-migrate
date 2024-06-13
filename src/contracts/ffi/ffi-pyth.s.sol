@@ -26,7 +26,7 @@ function getPythData(
 abstract contract PythBase {
     bytes[] pythUpdate;
     PythView pythView;
-    string pythAssets = "DAI,ETH,SOL,BTC,USDC,EUR,JPY";
+    string pythAssets = "DAI,ETH,SOL,BTC,USDC,EUR,JPY,GBP";
 
     function fetchPyth(string memory assets) internal {
         (bytes[] memory update, PythView memory values) = getPythData(assets);

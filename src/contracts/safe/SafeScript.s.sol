@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
-import {Utils} from "./Utils.s.sol";
-import {MUltiSendAddr} from "./Multisends.s.sol";
+import {Utils} from "c/safe/Utils.s.sol";
+import {MultiSendAddr} from "c/safe/Multisends.s.sol";
 
 // solhint-disable
 
@@ -12,7 +12,7 @@ function __revert(bytes memory _d) pure {
     }
 }
 
-contract SafeScript is MUltiSendAddr, Script {
+contract SafeScript is MultiSendAddr, Script {
     using Utils for *;
     enum Operation {
         CALL,

@@ -17,7 +17,7 @@ function getFacetsAndSelectors()
     )
 {
     string[] memory cmd = new string[](2);
-    cmd[0] = "./utils/getBytesAndSelectors.sh";
+    cmd[0] = "./utils/diamond/getBytesAndSelectors.sh";
     cmd[1] = "./src/**/facets/*Facet.sol";
 
     (files, selectors) = abi.decode(vmFFI.ffi(cmd), (string[], bytes4[][]));
@@ -52,8 +52,8 @@ function getFacetsAndSelectors(
     )
 {
     string[] memory cmd = new string[](2);
-    cmd[0] = "./utils/getBytesAndSelectors.sh";
-    cmd[1] = string.concat("./src/contracts/core/**/facets/", artifact, ".sol");
+    cmd[0] = "./utils/diamond/getBytesAndSelectors.sh";
+    cmd[1] = string.concat("./**/facets/", artifact, ".sol");
 
     (files, selectors) = abi.decode(vmFFI.ffi(cmd), (string[], bytes4[][]));
     facets = new bytes[](selectors.length);

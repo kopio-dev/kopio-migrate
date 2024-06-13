@@ -3,13 +3,7 @@ pragma solidity ^0.8.0;
 import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
 import {cs} from "kr/core/States.sol";
 import {Enums, VaultAsset} from "kr/core/types/Data.sol";
-import {IKresko} from "kr/core/IKresko.sol";
-import {IVault} from "kr/core/IVault.sol";
-import {PLog} from "kr/utils/PLog.s.sol";
-import {ArbDeploy} from "kr/info/ArbDeploy.sol";
-import {Scripted} from "kr/utils/Scripted.s.sol";
 import {Roles} from "kr/token/IKresko1155.sol";
-import {IKreditsDiamond} from "kr/core/IKreditsDiamond.sol";
 import {KrBase} from "c/base/KrBase.s.sol";
 
 abstract contract ForkBase is KrBase {
@@ -51,7 +45,6 @@ abstract contract ForkBase is KrBase {
         VaultAsset[] memory assets = vault.allAssets();
 
         for (uint256 i = 0; i < assets.length; i++) {
-            PLog.clg(assets[i].staleTime);
             vault.setAssetFeed(
                 address(assets[i].token),
                 address(assets[i].feed),

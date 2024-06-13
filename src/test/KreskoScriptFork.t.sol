@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console} from "forge-std/Test.sol";
 import {Tested} from "kr/utils/Tested.t.sol";
 import {KreskoScriptFork} from "s/KreskoScriptFork.s.sol";
 import {Help, Log} from "kr/utils/Libs.s.sol";

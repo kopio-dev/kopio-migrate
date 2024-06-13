@@ -10,7 +10,7 @@ broadcast = 'out/broadcast'
 cache_path = 'build/cache'
 
 remappings = [
-  "c/=src/contracts",
+  "c/=src/contracts/",
   's/=src/scripts/',
   't/=src/test/',
   'kr/=lib/kresko-lib/src/',
