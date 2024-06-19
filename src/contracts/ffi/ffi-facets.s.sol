@@ -18,7 +18,7 @@ function getFacetsAndSelectors()
 {
     string[] memory cmd = new string[](2);
     cmd[0] = "./utils/diamond/getBytesAndSelectors.sh";
-    cmd[1] = "./src/**/facets/*Facet.sol";
+    cmd[1] = "./**/facets/*Facet.sol";
 
     (files, selectors) = abi.decode(vmFFI.ffi(cmd), (string[], bytes4[][]));
     facets = new bytes[](selectors.length);
