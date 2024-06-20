@@ -2,14 +2,14 @@
 // solhint-disable
 
 pragma solidity ^0.8.0;
-import {Deployment, IDeploymentFactory} from "c/factory/IDeploymentFactory.sol";
+import {Deployment, IDeploymentFactory} from "kr/core/IDeploymentFactory.sol";
 import {mvm} from "kr/utils/MinVm.s.sol";
 
 library Factory {
     IDeploymentFactory internal constant FACTORY =
         IDeploymentFactory(0x000000000070AB95211e32fdA3B706589D3482D5);
 
-    struct DeployState {
+    struct FactoryState {
         IDeploymentFactory factory;
         string id;
         string outputLocation;
@@ -19,136 +19,136 @@ library Factory {
         bool disableLog;
     }
 
-    bytes32 internal constant DEPLOY_STATE_SLOT = keccak256("DeployState");
+    bytes32 internal constant FACTORY_STATE_SLOT = keccak256("FactoryState");
 
-    function initOutputJSON(string memory configId) internal {
+    function initJSON(string memory configId) internal {
         string memory outputDir = string.concat(
             "./temp/",
             mvm.toString(block.chainid),
             "/"
         );
         if (!mvm.exists(outputDir)) mvm.createDir(outputDir, true);
-        state().id = configId;
-        state().outputLocation = outputDir;
-        state().outputJson = configId;
+        data().id = configId;
+        data().outputLocation = outputDir;
+        data().outputJson = configId;
     }
 
-    function writeOutputJSON() internal {
-        string memory runsDir = string.concat(state().outputLocation, "runs/");
+    function writeJSON() internal {
+        string memory runsDir = string.concat(data().outputLocation, "runs/");
         if (!mvm.exists(runsDir)) mvm.createDir(runsDir, true);
         mvm.writeFile(
             string.concat(
                 runsDir,
-                state().id,
+                data().id,
                 "-",
                 mvm.toString(mvm.unixTime()),
                 ".json"
             ),
-            state().outputJson
+            data().outputJson
         );
         mvm.writeFile(
             string.concat(
-                state().outputLocation,
-                state().id,
+                data().outputLocation,
+                data().id,
                 "-",
                 "latest",
                 ".json"
             ),
-            state().outputJson
+            data().outputJson
         );
     }
 
-    function state() internal pure returns (DeployState storage ds) {
-        bytes32 slot = DEPLOY_STATE_SLOT;
+    function data() internal pure returns (FactoryState storage ds) {
+        bytes32 slot = FACTORY_STATE_SLOT;
         assembly {
             ds.slot := slot
         }
     }
 
-    modifier saveOutput(string memory id) {
-        JSONKey(id);
+    modifier saveOutput(string memory _id) {
+        JSONKey(_id);
         _;
-        saveJSONKey();
+        saveKey();
     }
 
-    function JSONKey(string memory id) internal {
-        state().currentKey = id;
-        state().currentJson = "";
+    function JSONKey(string memory _id) internal {
+        data().currentKey = _id;
+        data().currentJson = "";
     }
 
-    function setJsonAddr(string memory key, address val) internal {
-        state().currentJson = mvm.serializeAddress(
-            state().currentKey,
-            key,
-            val
+    function saveAddr(string memory _key, address _val) internal {
+        data().currentJson = mvm.serializeAddress(
+            data().currentKey,
+            _key,
+            _val
         );
     }
 
-    function setJsonBool(string memory key, bool val) internal {
-        state().currentJson = mvm.serializeBool(state().currentKey, key, val);
+    function saveBool(string memory _key, bool _val) internal {
+        data().currentJson = mvm.serializeBool(data().currentKey, _key, _val);
     }
 
-    function setJsonNumber(string memory key, uint256 val) internal {
-        state().currentJson = mvm.serializeUint(state().currentKey, key, val);
+    function saveUint(string memory _key, uint256 _val) internal {
+        data().currentJson = mvm.serializeUint(data().currentKey, _key, _val);
     }
 
-    function setJsonBytes(string memory key, bytes memory val) internal {
-        state().currentJson = mvm.serializeBytes(state().currentKey, key, val);
+    function saveBytes(string memory _key, bytes memory _val) internal {
+        data().currentJson = mvm.serializeBytes(data().currentKey, _key, _val);
     }
 
-    function saveJSONKey() internal {
-        state().outputJson = mvm.serializeString(
+    function saveKey() internal {
+        data().outputJson = mvm.serializeString(
             "out",
-            state().currentKey,
-            state().currentJson
+            data().currentKey,
+            data().currentJson
         );
     }
 
-    function pd3(bytes32 salt) internal view returns (address) {
-        return FACTORY.getCreate3Address(salt);
+    function pd3(bytes32 _salt) internal view returns (address) {
+        return FACTORY.getCreate3Address(_salt);
     }
 
-    function pp3(bytes32 salt) internal view returns (address, address) {
-        return FACTORY.previewCreate3ProxyAndLogic(salt);
+    function pp3(bytes32 _salt) internal view returns (address, address) {
+        return FACTORY.previewCreate3ProxyAndLogic(_salt);
     }
 
     function ctor(
-        bytes memory bcode,
-        bytes memory args
-    ) internal returns (bytes memory ccode) {
-        setJsonBytes("ctor", args);
-        return abi.encodePacked(bcode, args);
+        bytes memory _contract,
+        bytes memory _args
+    ) internal returns (bytes memory ccode_) {
+        saveBytes("ctor", _args);
+        return abi.encodePacked(_contract, _args);
     }
 
     function d2(
-        bytes memory ccode,
-        bytes memory _init,
+        bytes memory _ccode,
+        bytes memory _initCall,
         bytes32 _salt
-    ) internal returns (Deployment memory result) {
-        result = FACTORY.deployCreate2(ccode, _init, _salt);
-        setJsonAddr("address", result.implementation);
+    ) internal returns (Deployment memory result_) {
+        result_ = FACTORY.deployCreate2(_ccode, _initCall, _salt);
+        saveAddr("address", result_.implementation);
     }
 
     function d3(
         bytes memory ccode,
-        bytes memory _init,
+        bytes memory _initCall,
         bytes32 _salt
-    ) internal returns (Deployment memory result) {
-        result = FACTORY.deployCreate3(ccode, _init, _salt);
-        setJsonAddr("address", result.implementation);
+    ) internal returns (Deployment memory result_) {
+        result_ = FACTORY.deployCreate3(ccode, _initCall, _salt);
+        saveAddr("address", result_.implementation);
     }
 
     function p3(
         bytes memory ccode,
-        bytes memory _init,
+        bytes memory _initCall,
         bytes32 _salt
-    ) internal returns (Deployment memory result) {
-        result = FACTORY.create3ProxyAndLogic(ccode, _init, _salt);
-        setJsonAddr("address", address(result.proxy));
-        setJsonBytes(
+    ) internal returns (Deployment memory result_) {
+        result_ = FACTORY.create3ProxyAndLogic(ccode, _initCall, _salt);
+        saveAddr("address", address(result_.proxy));
+        saveBytes(
             "initializer",
-            abi.encode(result.implementation, address(FACTORY), _init)
+            abi.encode(result_.implementation, address(FACTORY), _initCall)
         );
-        setJsonAddr("implementation", result.implementation);
+        saveAddr("implementation", result_.implementation);
     }
 }

@@ -2,10 +2,9 @@
 pragma solidity ^0.8.13;
 
 import {Tested} from "kr/utils/Tested.t.sol";
-import {KredScriptFork} from "s/KredScriptFork.s.sol";
-import {Help, Log} from "kr/utils/Libs.s.sol";
+import {kredfork, Help, Log} from "s/kredits-fork.s.sol";
 
-contract KredScriptForkTest is KredScriptFork, Tested {
+contract testkredfork is kredfork, Tested {
     using Log for *;
     using Help for *;
 
@@ -15,10 +14,10 @@ contract KredScriptForkTest is KredScriptFork, Tested {
     function setUp() public override {
         super.setUp();
         balBefore = kredits.balanceOf(sender);
-        execKredFork();
+        kredForkTx();
     }
 
-    function testKredScripFork() public {
+    function test4KredFork() public pranked(sender) {
         balAfter = kredits.balanceOf(sender);
         balAfter.clg("bal-after");
     }

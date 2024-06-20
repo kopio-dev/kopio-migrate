@@ -4,8 +4,7 @@ pragma solidity ^0.8.0;
 
 import {vmFFI, FFIResult} from "kr/utils/Base.s.sol";
 import {PythView, IPyth, PriceFeed, getPythPriceView} from "kr/vendor/Pyth.sol";
-
-IPyth constant pythEP = IPyth(0xff1a0f4744e8582DF1aE09D5611b887B6a12925C);
+import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
 
 function getPythData(
     string memory _ids
@@ -23,30 +22,33 @@ function getPythData(
     (payload, , views) = _ffi(arg);
 }
 
-abstract contract PythBase {
-    bytes[] pythUpdate;
-    PythView pythView;
-    string pythAssets = "DAI,ETH,SOL,BTC,USDC,EUR,JPY,GBP";
+abstract contract PythBase is ArbDeployAddr {
+    bytes[] internal _pythPayload;
+    PythView internal _pythView;
+    uint256 internal _pythFee;
+    string internal constant _pythTickers =
+        "DAI,ETH,SOL,BTC,USDC,EUR,JPY,XAU,XAG";
 
-    function fetchPyth(string memory assets) internal {
-        (bytes[] memory update, PythView memory values) = getPythData(assets);
-        pythUpdate = update;
-        pythView.ids = values.ids;
-        delete pythView.prices;
+    function fetchPyth(string memory _tickersOrIds) internal {
+        (bytes[] memory update, PythView memory values) = getPythData(
+            _tickersOrIds
+        );
+        _pythFee = IPyth(pythAddr).getUpdateFee(update);
+        _pythPayload = update;
+        _pythView.ids = values.ids;
+        delete _pythView.prices;
         for (uint256 i; i < values.prices.length; i++) {
-            pythView.prices.push(values.prices[i]);
+            _pythView.prices.push(values.prices[i]);
         }
     }
 
-    function fetchPyth() internal {
-        fetchPyth(pythAssets);
+    function pythFetchOnly() internal {
+        fetchPyth(_pythTickers);
     }
 
-    function fetchPythAndUpdate() internal {
-        fetchPyth();
-        pythEP.updatePriceFeeds{value: pythEP.getUpdateFee(pythUpdate)}(
-            pythUpdate
-        );
+    function pythUpdate() internal {
+        pythFetchOnly();
+        IPyth(pythAddr).updatePriceFeeds{value: _pythFee}(_pythPayload);
     }
 }
 

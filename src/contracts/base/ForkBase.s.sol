@@ -1,74 +1,155 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
+
 import {cs} from "kr/core/States.sol";
-import {Enums, VaultAsset} from "kr/core/types/Data.sol";
-import {Roles} from "kr/token/IKresko1155.sol";
+import {Enums} from "kr/core/types/Const.sol";
+import {PLog} from "kr/utils/PLog.s.sol";
+import {NFTRole} from "kr/core/types/Role.sol";
+import {IViewFacet} from "kr/core/IKreditsDiamond.sol";
 import {KrBase} from "c/base/KrBase.s.sol";
+import {PLog} from "kr/utils/PLog.s.sol";
+import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
+import {VaultAsset} from "kr/core/IVault.sol";
 
 abstract contract ForkBase is KrBase {
-    address binance = 0xB38e8c17e38363aF6EbdCb3dAE12e0243582891D;
+    using PLog for *;
 
-    function giveAccess(address[] memory accounts) public broadcasted(safe) {
-        if (!kreskian.hasRole(Roles.MINTER_ROLE, safe)) {
-            kreskian.grantRole(Roles.MINTER_ROLE, safe);
-        }
-        if (!qfk.hasRole(Roles.MINTER_ROLE, safe)) {
-            qfk.grantRole(Roles.MINTER_ROLE, safe);
+    enum Fork {
+        None,
+        Funded,
+        Usable,
+        UsableFunded,
+        UsableGated,
+        UsableGatedFunded,
+        UsableUngated,
+        UsableUngatedFunded
+    }
+
+    function setupFork(Fork _mode) public {
+        if (_mode == Fork.None) return;
+        if (_mode == Fork.Funded) return fund(testAccs);
+
+        looseOracles();
+
+        if (_mode == Fork.UsableFunded) return fund(testAccs);
+
+        if (
+            _mode == Fork.UsableUngatedFunded || _mode == Fork.UsableGatedFunded
+        ) {
+            fund(testAccs);
         }
 
-        for (uint256 i; i < accounts.length; i++) {
-            address addr = accounts[i];
-            if (kreskian.balanceOf(addr, 0) == 0) {
-                kreskian.mint(addr, 0, 1);
-            }
-            if (qfk.balanceOf(addr, 0) == 0) {
-                qfk.mint(addr, 0, 1);
-            }
+        if (_mode == Fork.UsableGated || _mode == Fork.UsableGatedFunded) {
+            _gateAccounts(testAccs);
+        }
+
+        if (_mode == Fork.UsableUngated || _mode == Fork.UsableUngatedFunded) {
+            _ungateAccounts(testAccs);
         }
     }
 
-    function giveFunds(address[] memory accounts) public broadcasted(binance) {
-        for (uint256 i; i < accounts.length; i++) {
-            address addr = accounts[i];
+    function _ungateAccounts(
+        address[] memory _accs
+    ) public rebroadcasted(safe) {
+        _grantNFTMinter(safe);
+        for (uint256 i; i < _accs.length; i++) _mint1155s(_accs[i]);
+    }
+
+    function _gateAccounts(
+        address[] memory _accs
+    ) public rebroadcasted(safe) returns (uint256 removed) {
+        _grantNFTMinter(safe);
+
+        for (uint256 i; i < _accs.length; i++) _removeNFTs(_accs[i]);
+
+        return
+            kredits.balanceOf(address(0x1337)) +
+            kreskian.balanceOf(address(0x1337), 0) +
+            qfk.balanceOf(address(0x1337), 0);
+    }
+
+    function _mint1155s(address _account) public rebroadcasted(safe) {
+        if (kreskian.balanceOf(_account, 0) == 0) kreskian.mint(_account, 0, 1);
+        if (qfk.balanceOf(_account, 0) == 0) qfk.mint(_account, 0, 1);
+    }
+
+    function _removeNFTs(address _addr) internal rebroadcasted(_addr) {
+        IViewFacet.AccountInfo memory info = kredits.getAccountInfo(_addr);
+        if (info.linkedId != 0) {
+            kredits.unlink();
+            kredits.transferFrom(_addr, address(0x1337), info.linkedId);
+        }
+
+        if (info.walletProfileId != 0) {
+            kredits.transferFrom(_addr, address(0x1337), info.walletProfileId);
+        }
+
+        if (kreskian.balanceOf(_addr, 0) != 0) {
+            kreskian.safeTransferFrom(
+                _addr,
+                address(0x1337),
+                0,
+                kreskian.balanceOf(_addr, 0),
+                ""
+            );
+        }
+        if (qfk.balanceOf(_addr, 0) != 0) {
+            qfk.safeTransferFrom(
+                _addr,
+                address(0x1337),
+                0,
+                qfk.balanceOf(_addr, 0),
+                ""
+            );
+        }
+    }
+
+    function _grantNFTMinter(address _who) private rebroadcasted(safe) {
+        if (!kreskian.hasRole(NFTRole.MINTER, _who))
+            kreskian.grantRole(NFTRole.MINTER, _who);
+        if (!qfk.hasRole(NFTRole.MINTER, _who))
+            qfk.grantRole(NFTRole.MINTER, _who);
+    }
+
+    function fund(address[] memory _accs) public rebroadcasted(binance) {
+        for (uint256 i; i < _accs.length; i++) {
+            address addr = _accs[i];
             USDC.transfer(addr, 100_000e6);
             payable(addr).transfer(10 ether);
         }
     }
 
-    function looseOracles() public broadcasted(safe) {
+    function looseOracles() public rebroadcasted(safe) {
         kresko.executeInitializer(
-            address(new LooserInitializer()),
-            abi.encodeCall(LooserInitializer.run, ())
+            address(new ForkInitializer()),
+            abi.encodeCall(ForkInitializer.run, ())
         );
 
-        VaultAsset[] memory assets = vault.allAssets();
+        VaultAsset[] memory _tkns = vault.allAssets();
 
-        for (uint256 i = 0; i < assets.length; i++) {
+        for (uint256 i; i < _tkns.length; i++) {
             vault.setAssetFeed(
-                address(assets[i].token),
-                address(assets[i].feed),
+                address(_tkns[i].token),
+                address(_tkns[i].feed),
                 type(uint24).max
             );
         }
     }
 
-    address[] addresses = [
-        0x5a6B3E907b83DE2AbD9010509429683CF5ad5984, // dev
-        0x99999A0B66AF30f6FEf832938a5038644a72180a, // self
-        0x7e04f2812F952fB16df52C25aAefb96fcA7c8574, // miko
-        0xADDB385343d851d92CC8639162e5aD18c16E47Df, // ayuush
-        0xada18123Bf1788119Dd557DaCA618a2e92e1BE3c, // self
-        0x13458523bFCb8F0c30C440e77945C392AaA5020f, // qual
-        0xd6bEDEcDeC6Dc1C5900abeFD2CAB1663BCED8E22, // akira
-        0x3dD318bE619FaaedCF49D582Efa9fb087C688670, // george?
-        0x0E3DE118782bC7e4C7AFaFdD29Af762F4CdEcab5, // fenix
-        0xFcbB93547B7C1936fEbfe56b4cEeD9Ab66dA1857, // dev
-        0x36d50Cf7b7dfac786f3F14d251299F0593517E17 // miko
-    ];
+    function gateCheck(address[] memory _addrs) public view {
+        for (uint256 i = 0; i < _addrs.length; i++) {
+            address addr = _addrs[i];
+            PLog.clg("\n");
+            addr.clg("Account:");
+            kredits.balanceOf(addr).clg("bal-kredit");
+            kreskian.balanceOf(addr, 0).clg("bal-kreskian");
+            kredits.getAccountInfo(addr).linkedId.clg("linkedId");
+            PLog.clg("************************************");
+        }
+    }
 }
 
-contract LooserInitializer is ArbDeployAddr {
+contract ForkInitializer is ArbDeployAddr {
     function run() external {
         cs()
         .oracles[bytes32("ETH")][Enums.OracleType.Chainlink]
