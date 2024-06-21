@@ -10,11 +10,15 @@ contract krfork is ForkBase {
 
     function setUp() public virtual {
         super.base("MNEMONIC", "RPC_KRESKO_FORK");
+        super.cutterBase(kreskoAddr, CreateMode.Create2);
         vm.prank(sender);
         pythUpdate();
     }
 
-    function kreskoForkTx() public {
-        setupFork(Fork.None);
+    function kreskoForkTx() public rebroadcasted(safe) {
+        fullCut("test", "./src/contracts/safe/facets/**Facet.sol");
+        logCuts();
+        fullCut("test-2", "./src/contracts/safe/facets/**Facet.sol");
+        logCuts();
     }
 }
