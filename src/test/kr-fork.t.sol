@@ -11,9 +11,14 @@ contract testkrfork is krfork, Tested {
     uint256 val;
 
     function setUp() public override {
-        vm.deal(sender, 1 ether);
         super.setUp();
-        kreskoForkTx();
+        krForkTx();
+        setupFork(Fork.Usable);
+
+        vm.deal(sender, 1 ether);
+
+        vm.prank(sender);
+        super.updatePyth();
     }
 
     function test1KrFork() public pranked(sender) {

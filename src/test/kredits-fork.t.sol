@@ -8,17 +8,12 @@ contract testkredfork is kredfork, Tested {
     using Log for *;
     using Help for *;
 
-    uint256 balBefore;
-    uint256 balAfter;
-
     function setUp() public override {
         super.setUp();
-        balBefore = kredits.balanceOf(sender);
         kredForkTx();
     }
 
     function test4KredFork() public pranked(sender) {
-        balAfter = kredits.balanceOf(sender);
-        balAfter.clg("bal-after");
+        kredits.balanceOf(sender).clg("kredits-balance");
     }
 }

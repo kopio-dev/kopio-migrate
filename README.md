@@ -1,18 +1,20 @@
 # sol/ts base
 
-Lightweight repository for kresko work.
+Lightweight repository for the Kresko Protocol.
 
 Solidity:
 
-- Includes a regular script + connected test in `KreskoScript/KredScript`.
-- Includes a forking script + connected test in `KreskoScriptFork/KredScriptFork`.
-- Includes a multisig script + connected test in `KreskoScriptSafe/KredScriptSafe`.
+- Includes a regular script + connected test in `kr.s.sol/kredits.s.sol`.
+- Includes a forking script + connected test in `kr-fork.s.sol/kredits-fork.s.sol`.
+- Includes a multisig script + connected test in `kr-safe.s.sol/kredits-safe.s.sol`.
+- Code goes in src: `contracts/test/scripts`.
 
-- Includes Pyth/Diamond helpers in `KrBase.s.sol` that are included in above scripts.
+- Includes pyth/diamond utils in `s/base/KrBase.s.sol` - included in above scripts.
 
 Typescript:
 
-- Includes premade Viem configuration and pyth helpers for interacting with the contracts.
+- Includes viem/pyth utils in `@kr/viem` and `@kr/pyth`.
+- Code goes in `src/ts`
 
 ## Setup
 
@@ -26,6 +28,7 @@ The string network correspond to `foundry.toml` names.
 KRESKO_NETWORK= # Used for KreskoScript.s.sol / KreskoScript.t.sol
 KRESKO_FORK= # Used for KreskoScriptFork.s.sol / KreskoScriptFork.t.sol
 RPC_KRESKO_FORK= # RPC url for the "kresko-fork"
+RPC_ARBITRUM_ALCHEMY= # fallback RPC (for arb)
 
 KREDITS_NETWORK= # Used for KredScript.s.sol / KredScript.t.sol
 KREDITS_FORK= # Used for KredScriptFork.s.sol / KredScriptFork.t.sol
@@ -88,25 +91,43 @@ Run script broadcast to fork:
 just sf SCRIPT_NAME FUNC_SIG
 ```
 
-Deploy:
+Deploy (verify):
 
 ```shell
-just d SCRIPT_NAME FUNC_SIG
+just dv SCRIPT_NAME FUNC_SIG
 ```
 
-Resume Deploy:
+Deploy (no verify):
 
 ```shell
-just r SCRIPT_NAME FUNC_SIG
+just dnv SCRIPT_NAME FUNC_SIG
 ```
 
-## Safe Send Usage
+Resume Deploy (verify):
+
+```shell
+just rv SCRIPT_NAME FUNC_SIG
+```
+
+Resume Deploy (no verify):
+
+```shell
+just rnv SCRIPT_NAME FUNC_SIG
+```
+
+## Safe Tx Usage
 
 ### Setup
 
 ### Propose a script as batch
 
 This thing relies on using scripts with unique `--sig "myFunc()"` so do not use `run()`.
+
+Dry
+
+```shell
+just safe-dry Send safeTx
+```
 
 Use current nonce
 
@@ -141,9 +162,9 @@ just safe-del 0xSAFE_TX_HASH
 or
 
 ```shell
-bun utils/ffi.ts deleteBatch 0xSAFE_TX_HASH
+bun lib/kresko-lib/utils/ffi-safe.ts deleteBatch 0xSAFE_TX_HASH
 ```
 
 ## Misc
 
-- Look into `utils/ffi.ts` for other available commands using `bun utils/ffi.ts command ...args`
+- Look into `lib/kresko-lib/utils/ffi-safe.ts` for other available commands using `bun lib/kresko-lib/utils/ffi-safe.ts command ...args`

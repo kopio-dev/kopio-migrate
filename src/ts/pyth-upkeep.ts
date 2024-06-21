@@ -1,14 +1,12 @@
-import { fetchPythData } from '@utils/pyth/hermes'
-import { iPythABI } from '@utils/viem/abi/ipyth'
-import { addr } from '@utils/viem/config'
-import { walletKr } from '@utils/viem/wallets'
+import { fetchPythData } from '@kr/pyth/pyth-hermes'
+import { iPythConfig } from '@kr/viem/contracts/iPyth'
+import { walletKr } from '@kr/viem/wallets'
 
 const pythPayload = await fetchPythData(['ARB', 'SOL', 'USDC', 'ETH', 'BTC', 'EUR', 'JPY'], 'ts')
 
 while (true) {
   await walletKr.writeContract({
-    abi: iPythABI,
-    address: addr.pyth[42161],
+    ...iPythConfig,
     functionName: 'updatePriceFeeds',
     args: [pythPayload.payload],
     value: 7n,

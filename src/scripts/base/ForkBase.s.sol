@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {cs} from "kr/core/States.sol";
+import {cs, ms} from "kr/core/States.sol";
 import {Enums} from "kr/core/types/Const.sol";
 import {PLog} from "kr/utils/PLog.s.sol";
 import {NFTRole} from "kr/core/types/Role.sol";
 import {IViewFacet} from "kr/core/IKreditsDiamond.sol";
-import {KrBase} from "c/base/KrBase.s.sol";
+import {KrBase} from "s/base/KrBase.s.sol";
 import {PLog} from "kr/utils/PLog.s.sol";
-import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
 import {VaultAsset} from "kr/core/IVault.sol";
 
 abstract contract ForkBase is KrBase {
@@ -111,7 +110,7 @@ abstract contract ForkBase is KrBase {
             qfk.grantRole(NFTRole.MINTER, _who);
     }
 
-    function fund(address[] memory _accs) public rebroadcasted(binance) {
+    function fund(address[] memory _accs) public rebroadcasted(binanceAddr) {
         for (uint256 i; i < _accs.length; i++) {
             address addr = _accs[i];
             USDC.transfer(addr, 100_000e6);
@@ -149,34 +148,18 @@ abstract contract ForkBase is KrBase {
     }
 }
 
-contract ForkInitializer is ArbDeployAddr {
+contract ForkInitializer {
     function run() external {
-        cs()
-        .oracles[bytes32("ETH")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
+        for (uint256 i; i < ms().collaterals.length; i++) {
+            address asset = ms().collaterals[i];
 
-        cs()
-        .oracles[bytes32("JPY")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
-
-        cs()
-        .oracles[bytes32("EUR")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
-
-        cs()
-        .oracles[bytes32("BTC")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
-
-        cs()
-        .oracles[bytes32("SOL")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
-        cs()
-        .oracles[bytes32("USDC")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
-        cs()
-        .oracles[bytes32("KISS")][Enums.OracleType.Chainlink]
-            .staleTime = 1000000000000;
-
+            cs()
+            .oracles[cs().assets[asset].ticker][Enums.OracleType.Chainlink]
+                .staleTime = 1000000000000;
+            cs()
+            .oracles[cs().assets[asset].ticker][Enums.OracleType.Pyth]
+                .staleTime = 1000000000000;
+        }
         cs().maxPriceDeviationPct = 50e2;
     }
 }

@@ -1,16 +1,14 @@
-import { divider, formatAmount, formatPosition, formatPrice } from '@utils/logging'
-import { fetchPythData } from '@utils/pyth/hermes'
-import { iDataV1ABI } from '@utils/viem/abi/datav1'
-import { arb } from '@utils/viem/clients'
-import { addr } from '@utils/viem/config'
+import { fetchPythData } from '@kr/pyth/pyth-hermes'
+import { arb } from '@kr/viem/clients'
+import { iDataV1Config } from '@kr/viem/contracts/iDataV1'
+import { divider, formatAmount, formatPosition, formatPrice } from '@kr/viem/logging'
 import { formatUnits } from 'viem'
 
 const pythPayload = await fetchPythData(['ARB', 'SOL', 'USDC', 'ETH', 'BTC', 'EUR', 'JPY'], 'ts')
 
 const result = [
   await arb.readContract({
-    address: addr.datav1[42161],
-    abi: iDataV1ABI,
+    ...iDataV1Config,
     functionName: 'getAccount',
     args: [pythPayload.view, '0x299776620339EA8d5a4aAA2597Fcf75481ADA0Af'],
   }),

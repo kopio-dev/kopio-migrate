@@ -74,13 +74,13 @@ verify-contract:
   
 @test func:
   cd {{invocation_directory()}} && \
-  forge test --mt ".*$1.*" --ffi -vvvvv && \
+  forge test --mt ".*$1.*" --ffi -vvv && \
   echo "-> $1() ran successfully"
 
 @sign message:
   cd {{invocation_directory()}} && \
   echo "-> Signing $1" && \
-  bun utils/ffi.ts signMessage $1
+  bun lib/kresko-lib/utils/ffi-safe.ts signMessage $1
 
 @safe-run script func:
   cd {{invocation_directory()}} && \
@@ -98,14 +98,22 @@ verify-contract:
   forge script SafeScript --sig "sendBatch(string,uint256)" $2 $3 --ffi -vvv && \
   echo "-> Sent!"
 
+@safe-dry script func:
+  cd {{invocation_directory()}} && \
+  echo "-> Simulating.." && \
+  forge script $1 --sig "$2()" --ffi -vvv && \
+  echo "-> $1.$2() ran successfully" && \
+  forge script SafeScript --sig "simulateAndSign(string,uint256)" $2 0 --ffi -vvv && \
+  echo "-> Success! run 'just safe-file SIGNED_BATCH_OUTPUT_FILENAME' to send it."
+
 @safe-file batchfile:
   cd {{invocation_directory()}} && \
   echo "-> Sending $1.." && \
-  bun utils/ffi.ts proposeBatch $1 true && \
+  bun lib/kresko-lib/utils/ffi-safe.ts proposeBatch $1 true && \
   echo "-> Sent!"
 
 @safe-del safeTxHash:
   cd {{invocation_directory()}} && \
   echo "-> Sign to delete $1" && \
-  bun utils/ffi.ts deleteBatch $1 && \
+  bun lib/kresko-lib/utils/ffi-safe.ts deleteBatch $1 && \
   echo "-> Deleted $1"

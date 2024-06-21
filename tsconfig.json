@@ -23,16 +23,21 @@
       "@ts/*": [
         "./src/ts"
       ],
-      "@utils/*": [
-        "./utils/*"
+      "@kr/*": [
+        "./lib/kresko-lib/utils/*"
       ],
     },
     "types": [
       "./globals.d.ts"
     ]
   },
+  "exclude": [
+    "node_modules",
+    "temp"
+  ],
   "include": [
     "src",
-    "utils",
+    "lib/kresko-lib/utils",
+    "utils"
   ]
 }

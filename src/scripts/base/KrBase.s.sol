@@ -5,13 +5,11 @@ pragma solidity ^0.8.0;
 import {ArbDeploy} from "kr/info/ArbDeploy.sol";
 import {IKreditsDiamond} from "kr/core/IKreditsDiamond.sol";
 import {Cutter} from "kr/utils/Cutter.s.sol";
-import {Based} from "kr/utils/base/Base.s.sol";
+import {Based} from "kr/utils/base/Based.s.sol";
 import {PythScript} from "kr/utils/ffi/PythScript.s.sol";
 import {IKresko} from "kr/core/IKresko.sol";
 
-contract KrBase is Based, Cutter, PythScript {
-    address sender;
-    address constant binance = 0xB38e8c17e38363aF6EbdCb3dAE12e0243582891D;
+contract KrBase is Cutter, Based {
     address[] testAccs = [
         0x5a6B3E907b83DE2AbD9010509429683CF5ad5984, // dev
         0x99999A0B66AF30f6FEf832938a5038644a72180a, // self

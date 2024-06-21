@@ -14,6 +14,7 @@ docs/
 .env
 .secrets
 
+.DS_Store
 # temp/libs
 temp
 node_modules

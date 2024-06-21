@@ -10,13 +10,14 @@ contract testkrsafe is krsafe, Tested {
 
     function setUp() public override {
         super.setUp();
-        kreskoSafeTx();
+        krSafeTx();
 
         vm.prank(sender);
-        pythUpdate();
+        super.updatePyth();
     }
 
-    function test2KrSafe() public pranked(sender) {
+    function test2KrSafe() public pranked(SAFE_ADDRESS) {
         assertEq(true, true, "nope");
+        pyth.viewData.ids.length.clg("payload-len");
     }
 }

@@ -4,7 +4,7 @@
   "type": "module",
   "author": "panukettu",
   "scripts": {
-    "test:ci": "forge test --mt KreskoScriptSafe -vvv",
+    "test:ci": "forge test -v",
     "pyth-upkeep": "bun run src/ts/pyth-upkeep.ts"
   },
   "devDependencies": {

@@ -9,6 +9,7 @@ contract testkredsafe is kredsafe, Tested {
     using Help for *;
 
     function setUp() public override {
+        super.setUp();
         kredSafeTx();
     }
 

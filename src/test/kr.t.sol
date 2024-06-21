@@ -10,11 +10,11 @@ contract testkr is kr, Tested {
 
     function setUp() public override {
         super.setUp();
-        vm.deal(sender, 1 ether);
-        kreskoTx();
+        krTx();
 
+        vm.deal(sender, 1 ether);
         prank(sender);
-        pythUpdate();
+        super.updatePyth();
     }
 
     function test3Kr() public pranked(sender) {

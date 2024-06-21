@@ -1,5 +1,5 @@
-import { tickers } from '@utils/pyth/config'
-import { hermes } from '@utils/pyth/hermes'
+import { tickers } from '@kr/pyth/pyth-config'
+import { hermes } from '@kr/pyth/pyth-hermes'
 
 const response = await fetch(hermes.sse([tickers.ETH, tickers.BTC]))
 
