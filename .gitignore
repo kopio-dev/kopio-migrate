@@ -16,7 +16,7 @@ docs/
 
 .DS_Store
 # temp/libs
-temp
+temp*
 node_modules
 bin
 build

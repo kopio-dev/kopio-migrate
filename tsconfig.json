@@ -33,9 +33,10 @@
   },
   "exclude": [
     "node_modules",
-    "temp"
+    "**/temp"
   ],
   "include": [
+    "temp.ts",
     "src",
     "lib/kresko-lib/utils",
     "utils"

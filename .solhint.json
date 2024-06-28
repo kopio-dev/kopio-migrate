@@ -20,11 +20,13 @@
     "var-name-mixedcase": "off",
     "avoid-tx-origin": "error",
     "custom-errors": "off",
+    "state-visibility": "off",
     "const-name-snakecase": "off",
     "compiler-version": [
       "error",
       "<=0.8.23"
     ],
+    "contract-name-camelcase": "off",
     "no-inline-assembly": "off",
     "func-name-mixedcase": "off",
     "prettier/prettier": "error",

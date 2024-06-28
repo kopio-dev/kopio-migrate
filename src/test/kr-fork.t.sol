@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import {Tested} from "kr/utils/Tested.t.sol";
@@ -22,7 +22,7 @@ contract testkrfork is krfork, Tested {
     }
 
     function test1KrFork() public pranked(sender) {
-        val = kresko.getPrice(krEURAddr);
+        val = 1 ether;
         val.clg("val");
     }
 }
