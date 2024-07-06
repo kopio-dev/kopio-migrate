@@ -18,6 +18,6 @@ contract kredsafe is KrBase, SafeTx {
     }
 
     function _transaction() internal broadcasted(SAFE_ADDRESS) {
-        payable(sender).transfer(0.0001 ether);
+        payable(sender).transfer(0.001 ether);
     }
 }

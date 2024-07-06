@@ -21,7 +21,6 @@ remappings = [
 ffi = true
 
 via_IR = false
-solc = '0.8.23'
 optimizer = true
 optimizer_runs = 1000
 

@@ -1,11 +1,12 @@
 {
-  "name": "forge-safe",
+  "name": "kresko-updates",
   "module": "index.ts",
   "type": "module",
   "author": "panukettu",
   "scripts": {
     "test:ci": "forge test -v",
-    "pyth-upkeep": "bun run src/ts/pyth-upkeep.ts"
+    "pyth-upkeep": "bun run src/ts/pyth-upkeep.ts",
+    "merkle": "bun run src/ts/merkle.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -14,8 +15,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@openzeppelin/merkle-tree": "^1.0.6",
+    "@kreskolabs/csv-merkle": "^0.0.7",
     "@trezor/connect": "^9.2.2",
+    "@vercel/postgres": "^0.9.0",
     "csv": "^6.3.9",
     "eth-provider": "^0.13.6",
     "glob": "^10.3.12",
