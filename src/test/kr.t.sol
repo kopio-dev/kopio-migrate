@@ -12,13 +12,10 @@ contract testkr is kr, Tested {
 
     function setUp() public override {
         super.setUp();
-        forwarder = new Forwarder();
     }
 
     function test3Kr() public {
-        deal(sender, 100 ether);
-        address newSafe = krTx();
-        tel.allowance(address(safeFactory), sender).clg("allowance");
+        kresko.getGatingManager().clg("manager");
     }
 }
 
