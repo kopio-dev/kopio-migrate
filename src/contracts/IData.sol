@@ -6,6 +6,13 @@ import {View} from "kr/core/types/Views.sol";
 import {PythView} from "kr/vendor/Pyth.sol";
 
 interface IData {
+    struct Oracles {
+        address addr;
+        bytes32 pythId;
+        address clFeed;
+        bool ext;
+    }
+
     struct PreviewWithdrawArgs {
         address vaultAsset;
         uint256 outputAmount;
@@ -13,7 +20,7 @@ interface IData {
     }
     struct V {
         VA[] assets;
-        VTkn token;
+        Tkn share;
     }
     struct VA {
         address addr;
@@ -56,6 +63,7 @@ interface IData {
         View.Minter minter;
         V vault;
         View.AssetView[] assets;
+        Tkn[] tokens;
         W[] wraps;
         C[] collections;
         uint256 blockNr;
@@ -69,33 +77,31 @@ interface IData {
         bool seqUp;
         uint32 timestamp;
         uint256 chainId;
-        View.Gate gate;
     }
 
-    struct Ext {
+    struct Tkn {
+        string ticker;
         address addr;
         string name;
         string symbol;
         uint256 amount;
         uint256 tSupply;
-        uint8 oracleDecimals;
+        uint8 oracleDec;
         uint256 val;
         uint8 decimals;
         uint256 price;
-        RawPrice priceRaw;
         uint256 chainId;
+        bool isKrAsset;
+        bool isCollateral;
     }
 
     struct A {
         address addr;
         uint256 chainId;
-        View.Balance[] bals;
         View.MAccount minter;
         View.SAccount scdp;
         C[] collections;
-        Ext vault;
-        bool eligible;
-        uint8 phase;
+        Tkn[] tokens;
     }
 
     struct W {
@@ -120,10 +126,16 @@ interface IData {
     ) external view returns (G memory);
 
     function getAccount(
-        PythView calldata prices,
-        address acc,
-        address[] calldata ext
+        PythView calldata _prices,
+        address _acc,
+        address[] calldata _ext
     ) external view returns (A memory);
+
+    function getTokens(
+        PythView calldata _prices,
+        address _account,
+        address[] calldata _extTokens
+    ) external view returns (Tkn[] memory result);
 
     function getVault() external view returns (V memory);
 

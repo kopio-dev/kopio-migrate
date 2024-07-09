@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IKreditsDiamond} from "kr/core/IKreditsDiamond.sol";
 import {Cutter} from "kr/utils/Cutter.s.sol";
-import {Based} from "kr/utils/base/Based.s.sol";
+import {Based} from "kr/utils/Based.s.sol";
 import {IKresko} from "kr/core/IKresko.sol";
 
 contract KrBase is Cutter, Based {

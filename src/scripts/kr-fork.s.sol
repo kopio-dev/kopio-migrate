@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Help, Log} from "kr/utils/Libs.s.sol";
+import {Help, Log} from "kr/utils/s/LibVm.s.sol";
 import {ForkBase} from "./base/ForkBase.s.sol";
 import {IGatingManager} from "kr/core/States.sol";
-import {ClaimEvent} from "kr/core/IKreditsDiamond.sol";
 
 contract krfork is ForkBase {
     using Log for *;
@@ -25,14 +24,5 @@ contract krfork is ForkBase {
 
     function prepare() internal broadcasted(safe) {
         IGatingManager(kresko.getGatingManager()).setPhase(0);
-        kredits.createClaim(
-            ClaimEvent({
-                merkleRoot: merkleRoot,
-                startDate: uint128(block.timestamp),
-                claimWindow: 40 days,
-                burning: true,
-                minting: true
-            })
-        );
     }
 }

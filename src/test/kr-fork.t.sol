@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Tested} from "kr/utils/Tested.t.sol";
+import {Tested} from "kr/utils/s/Tested.t.sol";
 import {krfork, Log, Help} from "s/kr-fork.s.sol";
 
 contract testkrfork is krfork, Tested {
