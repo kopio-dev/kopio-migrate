@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {RawPrice} from "kr/core/types/Data.sol";
+
 import {VaultAsset} from "kr/core/IVault.sol";
 import {View} from "kr/core/types/Views.sol";
 import {PythView} from "kr/vendor/Pyth.sol";
@@ -10,6 +10,7 @@ interface IData {
         address addr;
         bytes32 pythId;
         address clFeed;
+        bool invertPyth;
         bool ext;
     }
 
@@ -26,11 +27,10 @@ interface IData {
         address addr;
         string name;
         string symbol;
-        uint8 oracleDecimals;
+        uint8 oracleDec;
         uint256 vSupply;
         bool isMarketOpen;
         uint256 tSupply;
-        RawPrice priceRaw;
         VaultAsset config;
         uint256 price;
     }
@@ -40,7 +40,7 @@ interface IData {
         uint8 decimals;
         string name;
         uint256 price;
-        uint8 oracleDecimals;
+        uint8 oracleDec;
         uint256 tSupply;
     }
 
@@ -116,6 +116,8 @@ interface IData {
         uint256 nativeVal;
     }
 
+    function refreshProtocolAssets() external;
+
     function previewWithdraw(
         PreviewWithdrawArgs calldata args
     ) external payable returns (uint256 withdrawAmount, uint256 fee);
@@ -136,8 +138,6 @@ interface IData {
         address _account,
         address[] calldata _extTokens
     ) external view returns (Tkn[] memory result);
-
-    function getVault() external view returns (V memory);
 
     function getVAssets() external view returns (VA[] memory);
 }

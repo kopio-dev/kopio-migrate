@@ -1,6 +1,6 @@
 import { fetchPythData } from '@kr/pyth/pyth-hermes'
 import { arb } from '@kr/viem/clients'
-import { iDataV1Config } from '@kr/viem/contracts/iDataV1'
+import { iDataConfig } from '@kr/viem/contracts/iData'
 import { divider, formatAmount, formatPosition, formatPrice } from '@kr/viem/logging'
 import { formatUnits } from 'viem/utils'
 
@@ -11,7 +11,7 @@ const pythPayload = await fetchPythData(
 
 const result = [
 	await arb.readContract({
-		...iDataV1Config,
+		...iDataConfig,
 		functionName: 'getAccount',
 		args: [pythPayload.view, '0x299776620339EA8d5a4aAA2597Fcf75481ADA0Af', []],
 	}),

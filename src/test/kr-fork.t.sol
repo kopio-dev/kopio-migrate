@@ -2,13 +2,12 @@
 pragma solidity ^0.8.13;
 
 import {Tested} from "kr/utils/s/Tested.t.sol";
-import {krfork, Log, Help} from "s/kr-fork.s.sol";
+import {krfork, Log, Utils, Help} from "s/kr-fork.s.sol";
 
 contract testkrfork is krfork, Tested {
     using Log for *;
     using Help for *;
-
-    uint256 val;
+    using Utils for *;
 
     function setUp() public override {
         super.setUp();
@@ -21,8 +20,5 @@ contract testkrfork is krfork, Tested {
         super.updatePyth();
     }
 
-    function test1KrFork() public pranked(sender) {
-        val = 1 ether;
-        val.clg("val");
-    }
+    function test1KrFork() public pranked(sender) {}
 }
