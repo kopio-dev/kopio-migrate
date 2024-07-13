@@ -5,7 +5,6 @@ import {cs, ms} from "kr/core/States.sol";
 import {Enums} from "kr/core/types/Const.sol";
 import {PLog} from "kr/utils/s/PLog.s.sol";
 import {NFTRole} from "kr/core/types/Role.sol";
-import {IViewFacet} from "kr/core/IKreditsDiamond.sol";
 import {KrBase} from "s/base/KrBase.s.sol";
 import {VaultAsset} from "kr/core/IVault.sol";
 
@@ -16,11 +15,7 @@ abstract contract ForkBase is KrBase {
         None,
         Funded,
         Usable,
-        UsableFunded,
-        UsableGated,
-        UsableGatedFunded,
-        UsableUngated,
-        UsableUngatedFunded
+        UsableFunded
     }
 
     function setupFork(Fork _mode) public {
@@ -30,76 +25,6 @@ abstract contract ForkBase is KrBase {
         looseOracles();
 
         if (_mode == Fork.UsableFunded) return fund(testAccs);
-
-        if (
-            _mode == Fork.UsableUngatedFunded || _mode == Fork.UsableGatedFunded
-        ) {
-            fund(testAccs);
-        }
-
-        if (_mode == Fork.UsableGated || _mode == Fork.UsableGatedFunded) {
-            _gateAccounts(testAccs);
-        }
-
-        if (_mode == Fork.UsableUngated || _mode == Fork.UsableUngatedFunded) {
-            _ungateAccounts(testAccs);
-        }
-    }
-
-    function _ungateAccounts(
-        address[] memory _accs
-    ) public rebroadcasted(safe) {
-        _grantNFTMinter(safe);
-        for (uint256 i; i < _accs.length; i++) _mint1155s(_accs[i]);
-    }
-
-    function _gateAccounts(
-        address[] memory _accs
-    ) public rebroadcasted(safe) returns (uint256 removed) {
-        _grantNFTMinter(safe);
-
-        for (uint256 i; i < _accs.length; i++) _removeNFTs(_accs[i]);
-
-        return
-            kredits.balanceOf(address(0x1337)) +
-            kreskian.balanceOf(address(0x1337), 0) +
-            qfk.balanceOf(address(0x1337), 0);
-    }
-
-    function _mint1155s(address _account) public rebroadcasted(safe) {
-        if (kreskian.balanceOf(_account, 0) == 0) kreskian.mint(_account, 0, 1);
-        if (qfk.balanceOf(_account, 0) == 0) qfk.mint(_account, 0, 1);
-    }
-
-    function _removeNFTs(address _addr) internal rebroadcasted(_addr) {
-        IViewFacet.AccountInfo memory info = kredits.getAccountInfo(_addr);
-        if (info.linkedId != 0) {
-            kredits.unlink();
-            kredits.transferFrom(_addr, address(0x1337), info.linkedId);
-        }
-
-        if (info.walletProfileId != 0) {
-            kredits.transferFrom(_addr, address(0x1337), info.walletProfileId);
-        }
-
-        if (kreskian.balanceOf(_addr, 0) != 0) {
-            kreskian.safeTransferFrom(
-                _addr,
-                address(0x1337),
-                0,
-                kreskian.balanceOf(_addr, 0),
-                ""
-            );
-        }
-        if (qfk.balanceOf(_addr, 0) != 0) {
-            qfk.safeTransferFrom(
-                _addr,
-                address(0x1337),
-                0,
-                qfk.balanceOf(_addr, 0),
-                ""
-            );
-        }
     }
 
     function _grantNFTMinter(address _who) private rebroadcasted(safe) {
@@ -131,18 +56,6 @@ abstract contract ForkBase is KrBase {
                 address(_tkns[i].feed),
                 type(uint24).max
             );
-        }
-    }
-
-    function gateCheck(address[] memory _addrs) public view {
-        for (uint256 i = 0; i < _addrs.length; i++) {
-            address addr = _addrs[i];
-            PLog.clg("\n");
-            addr.clg("Account:");
-            kredits.balanceOf(addr).clg("bal-kredit");
-            kreskian.balanceOf(addr, 0).clg("bal-kreskian");
-            kredits.getAccountInfo(addr).linkedId.clg("linkedId");
-            PLog.clg("************************************");
         }
     }
 }

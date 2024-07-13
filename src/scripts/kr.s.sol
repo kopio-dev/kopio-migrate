@@ -15,10 +15,9 @@ contract kr is KrBase {
     }
 
     function krTx() public broadcastedByPk("PRIVATE_KEY_FEED") {
-        bytes32[] memory tickers = new bytes32[](1);
-        bytes32[] memory exchanges = new bytes32[](1);
-        tickers[0] = bytes32("DOGE");
-        exchanges[0] = bytes32("CRYPTO");
-        marketStatus.setTickers(tickers, exchanges);
+        bytes32[][] memory args = new bytes32[][](2);
+        args[0][0] = "DOGE";
+        args[1][0] = "CRYPTO";
+        marketStatus.setTickers(args[0], args[1]);
     }
 }

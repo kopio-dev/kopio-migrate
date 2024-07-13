@@ -20,7 +20,7 @@ remappings = [
 
 ffi = true
 
-via_IR = true
+via_IR = false
 optimizer = true
 optimizer_runs = 1000
 

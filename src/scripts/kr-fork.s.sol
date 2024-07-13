@@ -16,7 +16,7 @@ contract krfork is ForkBase {
 
     function krForkTx() public {
         prepare();
-        setupFork(Fork.UsableGated);
+        setupFork(Fork.Usable);
     }
 
     function prepare() internal broadcasted(safe) {}
