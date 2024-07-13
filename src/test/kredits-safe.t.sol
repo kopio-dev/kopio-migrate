@@ -2,11 +2,10 @@
 pragma solidity ^0.8.13;
 
 import {Tested} from "kr/utils/s/Tested.t.sol";
-import {kredsafe, Help, Utils, Log} from "s/kredits-safe.s.sol";
+import {kredsafe, Utils, PLog} from "s/kredits-safe.s.sol";
 
 contract testkredsafe is kredsafe, Tested {
-    using Log for *;
-    using Help for *;
+    using PLog for *;
     using Utils for *;
 
     function setUp() public override {

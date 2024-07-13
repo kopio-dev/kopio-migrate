@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import {SafeTx} from "kr/utils/SafeTx.s.sol";
 import {KrBase} from "s/base/KrBase.s.sol";
-import {Help, Utils, Log} from "kr/utils/s/LibVm.s.sol";
+import {Utils} from "kr/utils/Libs.sol";
+import {PLog} from "kr/utils/s/PLog.s.sol";
 
 contract krsafe is KrBase, SafeTx {
-    using Log for *;
-    using Help for *;
+    using PLog for *;
     using Utils for *;
 
     function setUp() public virtual {
@@ -18,7 +18,5 @@ contract krsafe is KrBase, SafeTx {
         _transaction();
     }
 
-    function _transaction() private broadcasted(SAFE_ADDRESS) {
-        payable(sender).transfer(0.001 ether);
-    }
+    function _transaction() private broadcasted(SAFE_ADDRESS) {}
 }

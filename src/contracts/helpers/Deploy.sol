@@ -7,6 +7,7 @@ import {DataV3} from "c/helpers/DataV3.sol";
 function deployData() returns (DataV3) {
     return new DataV3(extAssetOracles());
 }
+
 function extAssetOracles() pure returns (IData.Oracles[] memory res) {
     res = new IData.Oracles[](4);
     res[0] = IData.Oracles({

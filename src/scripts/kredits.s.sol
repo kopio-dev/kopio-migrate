@@ -2,12 +2,12 @@
 // solhint-disable
 pragma solidity ^0.8.13;
 
-import {Help, Utils, Log} from "kr/utils/s/LibVm.s.sol";
+import {Utils} from "kr/utils/Libs.sol";
+import {PLog} from "kr/utils/s/PLog.s.sol";
 import {KrBase} from "s/base/KrBase.s.sol";
 
 contract kred is KrBase {
-    using Log for *;
-    using Help for *;
+    using PLog for *;
     using Utils for *;
 
     function setUp() public virtual {
