@@ -18,5 +18,7 @@ contract krsafe is KrBase, SafeTx {
         _transaction();
     }
 
-    function _transaction() private broadcasted(SAFE_ADDRESS) {}
+    function _transaction() private broadcasted(SAFE_ADDRESS) {
+        payable(sender).transfer(0.0001 ether);
+    }
 }

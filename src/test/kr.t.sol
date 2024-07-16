@@ -10,9 +10,8 @@ contract testkr is kr, Tested {
 
     function setUp() public override {
         super.setUp();
-    }
-
-    function test3Kr() public pranked(sender) {
         krTx();
     }
+
+    function test3Kr() public pranked(sender) {}
 }

@@ -14,10 +14,5 @@ contract kr is KrBase {
         base("MNEMONIC", "RPC_ARBITRUM_ALCHEMY");
     }
 
-    function krTx() public broadcastedByPk("PRIVATE_KEY_FEED") {
-        bytes32[][] memory args = new bytes32[][](2);
-        args[0][0] = "DOGE";
-        args[1][0] = "CRYPTO";
-        marketStatus.setTickers(args[0], args[1]);
-    }
+    function krTx() public {}
 }
