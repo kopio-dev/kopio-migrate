@@ -7,7 +7,6 @@ import {IKresko1155} from "kr/token/IKresko1155.sol";
 import {VaultAsset} from "kr/core/IVault.sol";
 import {Enums} from "kr/core/types/Const.sol";
 import {IAggregatorV3} from "kr/vendor/IAggregatorV3.sol";
-import {PercentageMath, WadRay} from "kr/core/Math.sol";
 import {PythView} from "kr/vendor/Pyth.sol";
 import {IKresko} from "kr/core/IKresko.sol";
 import {IData} from "./IData.sol";
@@ -19,18 +18,16 @@ import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
 import {IVault} from "kr/core/IVault.sol";
 import {IPyth} from "kr/vendor/Pyth.sol";
 import {IQuoterV2} from "kr/vendor/IQuoterV2.sol";
+import {IKreskoAsset} from "kr/core/IKreskoAsset.sol";
 
 contract DataV3 is ArbDeployAddr, IData {
-    using WadRay for uint256;
-    using PercentageMath for uint256;
     using Utils for *;
 
     IKresko constant KRESKO = IKresko(kreskoAddr);
     IKresko1155 constant kreskian = IKresko1155(kreskianAddr);
     IKresko1155 constant qfk = IKresko1155(questAddr);
+    IKresko1155[2] collections = [kreskian, qfk];
     IVault constant vault = IVault(vaultAddr);
-    IPyth constant pythEP = IPyth(pythAddr);
-    IQuoterV2 constant quoterV2 = IQuoterV2(quoterV2Addr);
 
     PythView emptyPrices;
     mapping(address => Oracles) public oracles;
@@ -43,14 +40,16 @@ contract DataV3 is ArbDeployAddr, IData {
     }
 
     function refreshProtocolAssets() public {
-        View.AssetView[] memory protocol = getAssets();
+        View.AssetView[] memory protocol = KRESKO
+            .viewProtocolData(emptyPrices)
+            .assets;
         for (uint256 i; i < protocol.length; i++) {
             View.AssetView memory item = protocol[i];
             Oracle memory pyth = KRESKO.getOracleOfTicker(
                 item.config.ticker,
                 Enums.OracleType.Pyth
             );
-            oracles[item.addr] = IData.Oracles({
+            oracles[item.addr] = Oracles({
                 addr: item.addr,
                 clFeed: KRESKO.getFeedForAddress(
                     item.addr,
@@ -63,14 +62,10 @@ contract DataV3 is ArbDeployAddr, IData {
         }
     }
 
-    function getAssets() public view returns (View.AssetView[] memory) {
-        return KRESKO.viewProtocolData(emptyPrices).assets;
-    }
-
     function getGlobals(
         PythView calldata _prices,
-        address[] calldata _extTokens
-    ) external view returns (G memory g) {
+        address[] memory _extTokens
+    ) public view returns (G memory g) {
         View.Protocol memory p = KRESKO.viewProtocolData(_prices);
         g.scdp = p.scdp;
         g.minter = p.minter;
@@ -113,34 +108,34 @@ contract DataV3 is ArbDeployAddr, IData {
     function getTokens(
         PythView calldata _prices,
         address _account,
-        address[] calldata _extTokens
+        address[] memory _extTokens
     ) public view returns (Tkn[] memory result) {
-        View.AssetView[] memory protocolAssets = KRESKO
+        View.AssetView[] memory assets = KRESKO
             .viewProtocolData(_prices)
             .assets;
 
-        result = new Tkn[](protocolAssets.length + _extTokens.length + 1);
+        result = new Tkn[](assets.length + _extTokens.length + 1);
 
         uint256 i;
         uint256 ethPrice;
 
-        for (i; i < protocolAssets.length; i++) {
-            result[i] = _assetViewToTkn(_account, protocolAssets[i]);
-            if (result[i].ticker.equals("ETH")) ethPrice = result[i].price;
+        for (i; i < assets.length; i++) {
+            if (assets[i].config.ticker == "ETH") ethPrice = result[i].price;
+            result[i] = _assetToToken(_account, assets[i]);
         }
 
         for (uint256 j; j < _extTokens.length; j++) {
             result[i++] = _getExtToken(_account, _extTokens[j]);
         }
 
-        uint256 nativeBal = _account != (address(0)) ? _account.balance : 0;
+        uint256 nativeBal = _account != address(0) ? _account.balance : 0;
         result[i] = Tkn({
             addr: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
             name: "Ethereum",
             symbol: "ETH",
             decimals: 18,
             amount: nativeBal,
-            val: nativeBal.wadMul(ethPrice),
+            val: nativeBal.wmul(ethPrice),
             tSupply: 0,
             price: ethPrice,
             chainId: block.chainid,
@@ -165,7 +160,7 @@ contract DataV3 is ArbDeployAddr, IData {
                 symbol: _symbol(address(a.token)),
                 tSupply: a.token.totalSupply(),
                 vSupply: a.token.balanceOf(vaultAddr),
-                price: answer > 0 ? uint256(answer) : 0,
+                price: uint256(answer),
                 isMarketOpen: true,
                 oracleDec: a.feed.decimals(),
                 config: a
@@ -176,186 +171,160 @@ contract DataV3 is ArbDeployAddr, IData {
     function getCollectionItems(
         address _account,
         IKresko1155 _collection
-    ) public view returns (CItem[] memory result) {
-        result = new CItem[](_collection == kreskian ? 1 : 8);
+    ) public view returns (CItem[] memory res) {
+        res = new CItem[](_collection == kreskian ? 1 : 8);
 
-        for (uint256 i; i < result.length; i++) {
-            result[i] = CItem({
-                id: i,
-                uri: _collection.uri(i),
-                balance: _collection.balanceOf(_account, i)
-            });
+        for (uint256 i; i < res.length; i++) {
+            res[i] = CItem(
+                i,
+                _collection.uri(i),
+                _collection.balanceOf(_account, i)
+            );
         }
     }
 
     function getCollectionData(
         address _account
-    ) public view returns (C[] memory result) {
-        result = new C[](2);
+    ) public view returns (C[] memory res) {
+        res = new C[](2);
 
-        IKresko1155[] memory collections = new IKresko1155[](2);
-        collections[0] = kreskian;
-        collections[1] = qfk;
         for (uint256 i; i < collections.length; i++) {
             IKresko1155 coll = collections[i];
-            result[i].uri = coll.contractURI();
-            result[i].addr = address(coll);
-            result[i].name = coll.name();
-            result[i].symbol = coll.symbol();
-            result[i].items = getCollectionItems(_account, coll);
+            res[i].uri = coll.contractURI();
+            res[i].addr = address(coll);
+            res[i].name = coll.name();
+            res[i].symbol = coll.symbol();
+            res[i].items = getCollectionItems(_account, coll);
         }
     }
 
     function previewWithdraw(
-        PreviewWithdrawArgs calldata args
-    ) external payable returns (uint256 withdrawAmount, uint256 fee) {
-        bool isVaultToAMM = args.vaultAsset != address(0) &&
-            args.path.length > 0;
-        uint256 vaultAssetAmount = !isVaultToAMM ? 0 : args.outputAmount;
-        if (isVaultToAMM) {
-            (vaultAssetAmount, , , ) = quoterV2.quoteExactOutput(
+        PreviewWd calldata args
+    ) external payable returns (uint256 amount, uint256 fee) {
+        amount = args.outputAmount;
+
+        if (args.path.length != 0) {
+            (amount, , , ) = IQuoterV2(quoterV2Addr).quoteExactOutput(
                 args.path,
                 args.outputAmount
             );
         }
-        (withdrawAmount, fee) = vault.previewWithdraw(
-            args.vaultAsset,
-            vaultAssetAmount
-        );
+        return vault.previewWithdraw(args.vaultAsset, amount);
     }
 
-    function _wraps(G memory _g) internal view returns (W[] memory result) {
-        uint256 count;
+    function _wraps(G memory _g) internal view returns (W[] memory res) {
+        uint256 items;
         for (uint256 i; i < _g.assets.length; i++) {
-            View.AssetView memory a = _g.assets[i];
-            if (a.config.kFactor > 0 && a.synthwrap.underlying != address(0))
-                ++count;
+            if (_g.assets[i].synthwrap.underlying != address(0)) ++items;
         }
-        result = new W[](count);
-        count = 0;
+        res = new W[](items);
         for (uint256 i; i < _g.assets.length; i++) {
             View.AssetView memory a = _g.assets[i];
-            if (a.config.kFactor > 0 && a.synthwrap.underlying != address(0)) {
-                uint256 nativeAmount = a.synthwrap.nativeUnderlyingEnabled
-                    ? a.synthwrap.underlying.balance
-                    : 0;
-                uint256 amount = IERC20(a.synthwrap.underlying).balanceOf(
-                    a.addr
+            IKreskoAsset.Wrapping memory wrap = a.synthwrap;
+            if (wrap.underlying != address(0)) {
+                uint256 amount = IERC20(wrap.underlying).balanceOf(a.addr);
+                uint256 native = a.addr.balance;
+                res[--items] = W(
+                    a.addr,
+                    wrap.underlying,
+                    a.symbol,
+                    a.price,
+                    a.config.decimals,
+                    amount,
+                    native,
+                    amount.toWad(wrap.underlyingDecimals).wmul(a.price),
+                    native.wmul(a.price)
                 );
-                result[count] = W({
-                    addr: a.addr,
-                    underlying: a.synthwrap.underlying,
-                    symbol: a.symbol,
-                    price: a.price,
-                    decimals: a.config.decimals,
-                    val: amount.toWad(a.synthwrap.underlyingDecimals).wadMul(
-                        a.price
-                    ),
-                    amount: amount,
-                    nativeAmount: nativeAmount,
-                    nativeVal: nativeAmount.wadMul(a.price)
-                });
-                ++count;
             }
         }
     }
 
     function _getExtToken(
-        address _account,
-        address _token
-    ) internal view returns (Tkn memory res) {
-        TokenData memory data = tokenData(_account, _token, 0, 0);
+        address _acc,
+        address _tkn
+    ) internal view returns (Tkn memory) {
+        TokenData memory tkn = _tokenData(_acc, _tkn, 0, 0);
 
-        res = Tkn({
-            addr: _token,
-            ticker: data.symbol,
-            name: data.name,
-            symbol: data.symbol,
-            decimals: data.decimals,
-            amount: data.balance,
-            val: data.value,
-            tSupply: data.tSupply,
-            price: data.price,
-            isKrAsset: false,
-            isCollateral: false,
-            oracleDec: data.oracleDec,
-            chainId: block.chainid
-        });
+        return
+            Tkn({
+                addr: _tkn,
+                ticker: tkn.symbol,
+                name: tkn.name,
+                symbol: tkn.symbol,
+                decimals: tkn.decimals,
+                amount: tkn.balance,
+                val: tkn.value,
+                tSupply: tkn.tSupply,
+                price: tkn.price,
+                isKrAsset: false,
+                isCollateral: false,
+                oracleDec: tkn.oracleDec,
+                chainId: block.chainid
+            });
     }
 
-    function _symbol(address _assetAddr) internal view returns (string memory) {
-        return
-            _assetAddr == 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8
-                ? "USDC.e"
-                : IERC20(_assetAddr).symbol();
+    function _symbol(address _tkn) internal view returns (string memory) {
+        if (_tkn == 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8) return "USDC.e";
+        return IERC20(_tkn).symbol();
     }
 
     function _getPrice(
         address _token
     ) internal view returns (uint256 price, uint8 decimals) {
         Oracles memory cfg = oracles[_token];
-        try pythEP.getPriceNoOlderThan(cfg.pythId, 30) returns (
+        try IPyth(pythAddr).getPriceNoOlderThan(cfg.pythId, 30) returns (
             Price memory p
         ) {
-            (price, decimals) = Pyth.processPyth(p, cfg.invertPyth);
+            return Pyth.processPyth(p, cfg.invertPyth);
         } catch {
-            (, int256 answer, , , ) = IAggregatorV3(cfg.clFeed)
-                .latestRoundData();
-            price = uint256(answer);
-            decimals = IAggregatorV3(cfg.clFeed).decimals();
+            IAggregatorV3 clFeed = IAggregatorV3(cfg.clFeed);
+            (, int256 answer, , , ) = clFeed.latestRoundData();
+            return (uint256(answer), clFeed.decimals());
         }
     }
 
-    function _assetViewToTkn(
+    function _assetToToken(
         address _account,
-        View.AssetView memory _asset
-    ) internal view returns (Tkn memory res) {
-        TokenData memory data = tokenData(
-            _account,
-            _asset.addr,
-            _asset.price,
-            8
-        );
-        res = Tkn({
-            addr: _asset.addr,
-            ticker: _asset.config.ticker.str(),
-            name: data.name,
-            symbol: data.symbol,
-            decimals: data.decimals,
-            amount: data.balance,
-            val: data.value,
-            tSupply: data.tSupply,
-            price: data.price,
-            chainId: block.chainid,
-            isKrAsset: _asset.config.kFactor > 0,
-            isCollateral: _asset.config.factor > 0,
-            oracleDec: data.oracleDec
-        });
+        View.AssetView memory _a
+    ) internal view returns (Tkn memory) {
+        TokenData memory t = _tokenData(_account, _a.addr, _a.price, 8);
+        return
+            Tkn({
+                addr: _a.addr,
+                ticker: _a.config.ticker.str(),
+                name: t.name,
+                symbol: t.symbol,
+                decimals: t.decimals,
+                amount: t.balance,
+                val: t.value,
+                tSupply: t.tSupply,
+                price: t.price,
+                chainId: block.chainid,
+                isKrAsset: _a.config.kFactor > 0,
+                isCollateral: _a.config.factor > 0,
+                oracleDec: t.oracleDec
+            });
     }
 
-    function tokenData(
+    function _tokenData(
         address _account,
         address _token,
         uint256 _price,
         uint8 _oracleDec
     ) internal view returns (TokenData memory res) {
+        if (_price == 0) (_price, _oracleDec) = _getPrice(_token);
+
         IERC20 token = IERC20(_token);
-        if (_price == 0) {
-            (_price, _oracleDec) = _getPrice(_token);
-        }
-        uint8 dec = token.decimals();
-        uint256 bal = _account != address(0) ? token.balanceOf(_account) : 0;
-        uint256 value = bal > 0
-            ? bal.toWad(dec).wadMul(_price.toWad(_oracleDec)).fromWad(8)
-            : 0;
         res.name = token.name();
         res.symbol = _symbol(_token);
-        res.balance = bal;
-        res.value = value;
-        res.price = _price;
         res.tSupply = token.totalSupply();
-        res.decimals = dec;
-        res.oracleDec = 8;
+        res.balance = _account != address(0) ? token.balanceOf(_account) : 0;
+        res.price = _price;
+        res.value = res
+            .balance
+            .toWad((res.decimals = token.decimals()))
+            .wmul(_price.toWad(_oracleDec))
+            .fromWad((res.oracleDec = 8));
     }
 
     function _vault() internal view returns (V memory result) {

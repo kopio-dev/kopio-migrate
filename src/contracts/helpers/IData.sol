@@ -14,7 +14,7 @@ interface IData {
         bool ext;
     }
 
-    struct PreviewWithdrawArgs {
+    struct PreviewWd {
         address vaultAsset;
         uint256 outputAmount;
         bytes path;
@@ -23,6 +23,7 @@ interface IData {
         VA[] assets;
         Tkn share;
     }
+
     struct VA {
         address addr;
         string name;
@@ -33,15 +34,6 @@ interface IData {
         uint256 tSupply;
         VaultAsset config;
         uint256 price;
-    }
-
-    struct VTkn {
-        string symbol;
-        uint8 decimals;
-        string name;
-        uint256 price;
-        uint8 oracleDec;
-        uint256 tSupply;
     }
 
     struct C {
@@ -119,7 +111,7 @@ interface IData {
     function refreshProtocolAssets() external;
 
     function previewWithdraw(
-        PreviewWithdrawArgs calldata args
+        PreviewWd calldata args
     ) external payable returns (uint256 withdrawAmount, uint256 fee);
 
     function getGlobals(
