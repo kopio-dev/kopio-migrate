@@ -9,6 +9,8 @@ out = 'build'
 broadcast = 'out/broadcast'
 cache_path = 'build/cache'
 
+evm_version = "cancun"
+
 remappings = [
   "c/=src/contracts/",
   's/=src/scripts/',

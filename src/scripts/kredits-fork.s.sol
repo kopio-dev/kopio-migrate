@@ -3,7 +3,7 @@
 pragma solidity ^0.8.13;
 
 import {Utils} from "kr/utils/Libs.sol";
-import {PLog} from "kr/utils/s/PLog.s.sol";
+import {PLog} from "kr/vm/PLog.s.sol";
 import {ForkBase} from "s/base/ForkBase.s.sol";
 
 contract kredfork is ForkBase {

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {cs, ms} from "kr/core/States.sol";
 import {Enums} from "kr/core/types/Const.sol";
-import {PLog} from "kr/utils/s/PLog.s.sol";
+import {PLog} from "kr/vm/PLog.s.sol";
 import {NFTRole} from "kr/core/types/Role.sol";
 import {KrBase} from "s/base/KrBase.s.sol";
 import {VaultAsset} from "kr/core/IVault.sol";
@@ -37,7 +37,7 @@ abstract contract ForkBase is KrBase {
     function fund(address[] memory _accs) public rebroadcasted(binanceAddr) {
         for (uint256 i; i < _accs.length; i++) {
             address addr = _accs[i];
-            USDC.transfer(addr, 100_000e6);
+            usdc.transfer(addr, 100_000e6);
             payable(addr).transfer(10 ether);
         }
     }

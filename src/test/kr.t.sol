@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Tested} from "kr/utils/s/Tested.t.sol";
+import {Tested} from "kr/vm/Tested.t.sol";
 import {kr, Utils, PLog} from "s/kr.s.sol";
 
 contract testkr is kr, Tested {
