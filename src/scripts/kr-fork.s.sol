@@ -10,7 +10,7 @@ contract krfork is ForkBase {
     using Utils for *;
 
     function setUp() public virtual {
-        super.base("MNEMONIC", "RPC_KRESKO_FORK");
+        super.base("MNEMONIC_KOPIO", "RPC_KRESKO_FORK");
         super.cutterBase(kreskoAddr, CreateMode.Create2);
     }
 
