@@ -7,6 +7,13 @@ import {DataV3} from "c/helpers/DataV3.sol";
 function deployData() returns (DataV3) {
     return new DataV3(extAssetOracles());
 }
+function deployDataBytes()
+    pure
+    returns (bytes memory ctor, bytes memory ccode)
+{
+    ctor = abi.encode(extAssetOracles());
+    ccode = bytes.concat(type(DataV3).creationCode, ctor);
+}
 
 function extAssetOracles() pure returns (IData.Oracles[] memory res) {
     res = new IData.Oracles[](4);

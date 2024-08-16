@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Tested} from "kr/vm/Tested.t.sol";
-import {krfork, PLog, Utils} from "s/kr-fork.s.sol";
-import {tbytes} from "kr/utils/TBytes.sol";
+import {Tested} from "kopio/vm/Tested.t.sol";
+import {fork, PLog, Utils} from "s/fork.s.sol";
+import {tbytes} from "kopio/utils/TBytes.sol";
 
-contract testkrfork is krfork, Tested {
+contract testfork is fork, Tested {
     using PLog for *;
     using Utils for *;
 
     function setUp() public override {
         super.setUp();
-        krForkTx();
+        forkTx();
         setupFork(Fork.Usable);
 
         vm.deal(sender, 1 ether);
@@ -20,5 +20,5 @@ contract testkrfork is krfork, Tested {
         super.updatePyth();
     }
 
-    function test1KrFork() public pranked(sender) {}
+    function test1Fork() public pranked(sender) {}
 }

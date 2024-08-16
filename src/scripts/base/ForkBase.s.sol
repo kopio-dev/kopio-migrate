@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {cs, ms} from "kr/core/States.sol";
-import {Enums} from "kr/core/types/Const.sol";
-import {PLog} from "kr/vm/PLog.s.sol";
-import {NFTRole} from "kr/core/types/Role.sol";
-import {KrBase} from "s/base/KrBase.s.sol";
-import {VaultAsset} from "kr/core/IVault.sol";
+import {Enums, cs, ms} from "kopio/IKopioCore.sol";
+import {PLog} from "kopio/vm/PLog.s.sol";
+import {Base} from "s/base/Base.s.sol";
+import {VaultAsset} from "kopio/IVault.sol";
 
-abstract contract ForkBase is KrBase {
+abstract contract ForkBase is Base {
     using PLog for *;
 
     enum Fork {
@@ -27,13 +25,6 @@ abstract contract ForkBase is KrBase {
         if (_mode == Fork.UsableFunded) return fund(testAccs);
     }
 
-    function _grantNFTMinter(address _who) private rebroadcasted(safe) {
-        if (!kreskian.hasRole(NFTRole.MINTER, _who))
-            kreskian.grantRole(NFTRole.MINTER, _who);
-        if (!qfk.hasRole(NFTRole.MINTER, _who))
-            qfk.grantRole(NFTRole.MINTER, _who);
-    }
-
     function fund(address[] memory _accs) public rebroadcasted(binanceAddr) {
         for (uint256 i; i < _accs.length; i++) {
             address addr = _accs[i];
@@ -43,7 +34,7 @@ abstract contract ForkBase is KrBase {
     }
 
     function looseOracles() public rebroadcasted(safe) {
-        kresko.executeInitializer(
+        core.executeInitializer(
             address(new ForkInitializer()),
             abi.encodeCall(ForkInitializer.run, ())
         );

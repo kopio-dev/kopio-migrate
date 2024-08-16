@@ -6,7 +6,8 @@
   "scripts": {
     "test:ci": "forge test -v",
     "pyth-upkeep": "bun run src/ts/pyth-upkeep.ts",
-    "merkle": "bun run src/ts/merkle.ts"
+    "merkle": "bun run src/ts/merkle.ts",
+    "abi": "bun lib/kopio-lib/utils/abi-util.ts IKopioCore,IKopioMulticall,IONE,IData,IVault,IKopio protocol,multicall,one,data,vault,kETH"
   },
   "devDependencies": {
     "@types/bun": "latest"

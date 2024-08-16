@@ -1,32 +1,28 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import {View} from "kr/core/types/Views.sol";
-import {IERC20} from "kr/token/IERC20.sol";
-import {IKresko1155} from "kr/token/IKresko1155.sol";
-import {VaultAsset} from "kr/core/IVault.sol";
-import {Enums} from "kr/core/types/Const.sol";
-import {IAggregatorV3} from "kr/vendor/IAggregatorV3.sol";
-import {PythView} from "kr/vendor/Pyth.sol";
-import {IKresko} from "kr/core/IKresko.sol";
+import {Oracle, Enums, IKopioCore} from "kopio/IKopioCore.sol";
+import {IERC20} from "kopio/token/IERC20.sol";
+import {IAggregatorV3} from "kopio/vendor/IAggregatorV3.sol";
+import {PythView, Price} from "kopio/vendor/Pyth.sol";
 import {IData} from "./IData.sol";
-import {Pyth} from "kr/utils/Oracles.sol";
-import {Utils} from "kr/utils/Libs.sol";
-import {Price} from "kr/vendor/Pyth.sol";
-import {Oracle} from "kr/core/types/Data.sol";
-import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
-import {IVault} from "kr/core/IVault.sol";
-import {IPyth} from "kr/vendor/Pyth.sol";
-import {IQuoterV2} from "kr/vendor/IQuoterV2.sol";
-import {IKreskoAsset} from "kr/core/IKreskoAsset.sol";
+import {Pyth} from "kopio/utils/Oracles.sol";
+import {Utils} from "kopio/utils/Libs.sol";
+import {ArbDeployAddr} from "kopio/info/ArbDeployAddr.sol";
+import {IPyth} from "kopio/vendor/Pyth.sol";
+import {IQuoterV2} from "kopio/vendor/IQuoterV2.sol";
+import {ILZ1155} from "kopio/token/ILZ1155.sol";
+import {VaultAsset, IVault} from "kopio/IVault.sol";
 
 contract DataV3 is ArbDeployAddr, IData {
     using Utils for *;
 
-    IKresko constant KRESKO = IKresko(kreskoAddr);
-    IKresko1155 constant kreskian = IKresko1155(kreskianAddr);
-    IKresko1155 constant qfk = IKresko1155(questAddr);
-    IKresko1155[2] collections = [kreskian, qfk];
+    IKopioCore constant core = IKopioCore(protocolAddr);
+    ILZ1155 constant kreskian =
+        ILZ1155(0xAbDb949a18d27367118573A217E5353EDe5A0f1E);
+    ILZ1155 constant qfk = ILZ1155(0x1C04925779805f2dF7BbD0433ABE92Ea74829bF6);
+
+    ILZ1155[2] collections = [kreskian, qfk];
     IVault constant vault = IVault(vaultAddr);
 
     PythView emptyPrices;
@@ -40,18 +36,16 @@ contract DataV3 is ArbDeployAddr, IData {
     }
 
     function refreshProtocolAssets() public {
-        View.AssetView[] memory protocol = KRESKO
-            .viewProtocolData(emptyPrices)
-            .assets;
+        TAsset[] memory protocol = core.aDataProtocol(emptyPrices).assets;
         for (uint256 i; i < protocol.length; i++) {
-            View.AssetView memory item = protocol[i];
-            Oracle memory pyth = KRESKO.getOracleOfTicker(
+            TAsset memory item = protocol[i];
+            Oracle memory pyth = core.getOracleOfTicker(
                 item.config.ticker,
                 Enums.OracleType.Pyth
             );
             oracles[item.addr] = Oracles({
                 addr: item.addr,
-                clFeed: KRESKO.getFeedForAddress(
+                clFeed: core.getFeedForAddress(
                     item.addr,
                     Enums.OracleType.Chainlink
                 ),
@@ -66,19 +60,19 @@ contract DataV3 is ArbDeployAddr, IData {
         PythView calldata _prices,
         address[] memory _extTokens
     ) public view returns (G memory g) {
-        View.Protocol memory p = KRESKO.viewProtocolData(_prices);
+        Protocol memory p = core.aDataProtocol(_prices);
         g.scdp = p.scdp;
-        g.minter = p.minter;
+        g.icdp = p.icdp;
         g.assets = p.assets;
         g.tokens = getTokens(_prices, address(0), _extTokens);
 
-        g.seqPeriod = p.sequencerGracePeriodTime;
-        g.seqStart = p.sequencerStartedAt;
-        g.seqUp = p.isSequencerUp;
+        g.seqPeriod = p.seqGracePeriod;
+        g.seqStart = p.seqStartAt;
+        g.seqUp = p.seqUp;
 
-        g.maxDeviation = p.maxPriceDeviationPct;
+        g.maxDeviation = p.maxDeviation;
         g.oracleDec = p.oracleDecimals;
-        g.safety = p.safetyStateSet;
+        g.safety = p.safety;
         g.tvl = p.tvl;
 
         g.vault = _vault();
@@ -95,9 +89,9 @@ contract DataV3 is ArbDeployAddr, IData {
         address _account,
         address[] calldata _extTokens
     ) external view returns (A memory ac) {
-        View.Account memory data = KRESKO.viewAccountData(_prices, _account);
+        Account memory data = core.aDataAccount(_prices, _account);
         ac.addr = data.addr;
-        ac.minter = data.minter;
+        ac.icdp = data.icdp;
         ac.scdp = data.scdp;
 
         ac.collections = getCollectionData(_account);
@@ -110,9 +104,7 @@ contract DataV3 is ArbDeployAddr, IData {
         address _account,
         address[] memory _extTokens
     ) public view returns (Tkn[] memory result) {
-        View.AssetView[] memory assets = KRESKO
-            .viewProtocolData(_prices)
-            .assets;
+        TAsset[] memory assets = core.aDataProtocol(_prices).assets;
 
         result = new Tkn[](assets.length + _extTokens.length + 1);
 
@@ -139,7 +131,7 @@ contract DataV3 is ArbDeployAddr, IData {
             tSupply: 0,
             price: ethPrice,
             chainId: block.chainid,
-            isKrAsset: false,
+            isKopio: false,
             isCollateral: true,
             ticker: "ETH",
             oracleDec: 8
@@ -170,7 +162,7 @@ contract DataV3 is ArbDeployAddr, IData {
 
     function getCollectionItems(
         address _account,
-        IKresko1155 _collection
+        ILZ1155 _collection
     ) public view returns (CItem[] memory res) {
         res = new CItem[](_collection == kreskian ? 1 : 8);
 
@@ -189,7 +181,7 @@ contract DataV3 is ArbDeployAddr, IData {
         res = new C[](2);
 
         for (uint256 i; i < collections.length; i++) {
-            IKresko1155 coll = collections[i];
+            ILZ1155 coll = collections[i];
             res[i].uri = coll.contractURI();
             res[i].addr = address(coll);
             res[i].name = coll.name();
@@ -215,24 +207,23 @@ contract DataV3 is ArbDeployAddr, IData {
     function _wraps(G memory _g) internal view returns (W[] memory res) {
         uint256 items;
         for (uint256 i; i < _g.assets.length; i++) {
-            if (_g.assets[i].synthwrap.underlying != address(0)) ++items;
+            if (_g.assets[i].wrap.underlying != address(0)) ++items;
         }
         res = new W[](items);
         for (uint256 i; i < _g.assets.length; i++) {
-            View.AssetView memory a = _g.assets[i];
-            IKreskoAsset.Wrapping memory wrap = a.synthwrap;
-            if (wrap.underlying != address(0)) {
-                uint256 amount = IERC20(wrap.underlying).balanceOf(a.addr);
+            TAsset memory a = _g.assets[i];
+            if (a.wrap.underlying != address(0)) {
+                uint256 amount = IERC20(a.wrap.underlying).balanceOf(a.addr);
                 uint256 native = a.addr.balance;
                 res[--items] = W(
                     a.addr,
-                    wrap.underlying,
+                    a.wrap.underlying,
                     a.symbol,
                     a.price,
                     a.config.decimals,
                     amount,
                     native,
-                    amount.toWad(wrap.underlyingDecimals).wmul(a.price),
+                    amount.toWad(a.wrap.underlyingDec).wmul(a.price),
                     native.wmul(a.price)
                 );
             }
@@ -256,7 +247,7 @@ contract DataV3 is ArbDeployAddr, IData {
                 val: tkn.value,
                 tSupply: tkn.tSupply,
                 price: tkn.price,
-                isKrAsset: false,
+                isKopio: false,
                 isCollateral: false,
                 oracleDec: tkn.oracleDec,
                 chainId: block.chainid
@@ -285,7 +276,7 @@ contract DataV3 is ArbDeployAddr, IData {
 
     function _assetToToken(
         address _account,
-        View.AssetView memory _a
+        TAsset memory _a
     ) internal view returns (Tkn memory) {
         TokenData memory t = _tokenData(_account, _a.addr, _a.price, 8);
         return
@@ -300,7 +291,7 @@ contract DataV3 is ArbDeployAddr, IData {
                 tSupply: t.tSupply,
                 price: t.price,
                 chainId: block.chainid,
-                isKrAsset: _a.config.kFactor > 0,
+                isKopio: _a.config.dFactor > 0,
                 isCollateral: _a.config.factor > 0,
                 oracleDec: t.oracleDec
             });

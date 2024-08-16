@@ -23,8 +23,8 @@
       "@ts/*": [
         "./src/ts"
       ],
-      "@kr/*": [
-        "./lib/kresko-lib/utils/*"
+      "@kopio/*": [
+        "./lib/kopio-lib/utils/*"
       ],
     },
     "types": [
@@ -38,7 +38,7 @@
   "include": [
     "temp.ts",
     "src",
-    "lib/kresko-lib/utils",
+    "lib/kopio-lib/utils",
     "utils"
   ]
 }

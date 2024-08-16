@@ -1,6 +1,6 @@
-import { fetchPythData } from '@kr/pyth/pyth-hermes'
-import { iPythConfig } from '@kr/viem/contracts/iPyth'
-import { wallet } from '@kr/viem/clients'
+import { fetchPythData } from '@kopio/pyth/pyth-hermes'
+import { iPythConfig } from '@kopio/viem/contracts/iPyth'
+import { wallet } from '@kopio/viem/clients'
 
 const pythPayload = await fetchPythData(['ARB', 'SOL', 'USDC', 'ETH', 'BTC', 'EUR', 'JPY', 'XAG', 'XAU'], 'ts')
 

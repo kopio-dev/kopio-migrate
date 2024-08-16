@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {VaultAsset} from "kr/core/IVault.sol";
-import {View} from "kr/core/types/Views.sol";
-import {PythView} from "kr/vendor/Pyth.sol";
+import {TData} from "kopio/IKopioCore.sol";
+import {VaultAsset} from "kopio/IVault.sol";
+import {PythView} from "kopio/vendor/Pyth.sol";
 
-interface IData {
+interface IData is TData {
     struct Oracles {
         address addr;
         bytes32 pythId;
@@ -51,10 +51,10 @@ interface IData {
     }
 
     struct G {
-        View.SCDP scdp;
-        View.Minter minter;
+        SCDP scdp;
+        ICDP icdp;
         V vault;
-        View.AssetView[] assets;
+        TAsset[] assets;
         Tkn[] tokens;
         W[] wraps;
         C[] collections;
@@ -83,15 +83,15 @@ interface IData {
         uint8 decimals;
         uint256 price;
         uint256 chainId;
-        bool isKrAsset;
+        bool isKopio;
         bool isCollateral;
     }
 
     struct A {
         address addr;
         uint256 chainId;
-        View.MAccount minter;
-        View.SAccount scdp;
+        IAccount icdp;
+        SAccount scdp;
         C[] collections;
         Tkn[] tokens;
     }

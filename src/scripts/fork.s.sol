@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Utils} from "kr/utils/Libs.sol";
-import {PLog} from "kr/vm/PLog.s.sol";
+import {Utils} from "kopio/utils/Libs.sol";
+import {PLog} from "kopio/vm/PLog.s.sol";
 import {ForkBase} from "./base/ForkBase.s.sol";
 
-contract krfork is ForkBase {
+contract fork is ForkBase {
     using PLog for *;
     using Utils for *;
 
     function setUp() public virtual {
-        super.base("MNEMONIC_KOPIO", "RPC_KRESKO_FORK");
-        super.cutterBase(kreskoAddr, CreateMode.Create2);
+        super.base("MNEMONIC_KOPIO", "arbitrum");
+        super.cutterBase(protocolAddr, CreateMode.Create2);
     }
 
-    function krForkTx() public {
+    function forkTx() public {
         prepare();
         setupFork(Fork.Usable);
     }

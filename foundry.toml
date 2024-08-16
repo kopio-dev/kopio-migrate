@@ -11,14 +11,7 @@ cache_path = 'build/cache'
 
 evm_version = "cancun"
 
-remappings = [
-  "c/=src/contracts/",
-  's/=src/scripts/',
-  't/=src/test/',
-  'kr/=lib/kresko-lib/src/',
-  '@oz-upg/=lib/kresko-lib/lib/openzeppelin-contracts-upgradeable/contracts/',
-  '@oz/=lib/kresko-lib/lib/openzeppelin-contracts/contracts/',
-]
+remappings = ["c/=src/contracts/", 's/=src/scripts/', 't/=src/test/', 'kopio/=lib/kopio-lib/src/']
 
 ffi = true
 

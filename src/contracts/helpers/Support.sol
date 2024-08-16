@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {ArbDeployAddr} from "kr/info/ArbDeployAddr.sol";
-import {View} from "kr/core/types/Views.sol";
-import {Utils} from "kr/utils/Libs.sol";
-import {IKresko} from "kr/core/IKresko.sol";
-import {IVault} from "kr/core/IVault.sol";
-import {IERC20} from "kr/token/IERC20.sol";
+import {ArbDeployAddr} from "kopio/info/ArbDeployAddr.sol";
+import {IKopioCore, TData} from "kopio/IKopioCore.sol";
+import {Utils} from "kopio/utils/Libs.sol";
+import {IVault} from "kopio/IVault.sol";
+import {IERC20} from "kopio/token/IERC20.sol";
 import {ISupport, PythView} from "c/helpers/ISupport.sol";
 
-contract Support is ArbDeployAddr, ISupport {
+contract Support is ArbDeployAddr, TData, ISupport {
     using Utils for *;
 
-    IKresko constant KRESKO = IKresko(kreskoAddr);
+    IKopioCore constant core = IKopioCore(protocolAddr);
     IVault constant vault = IVault(vaultAddr);
     PythView noPyth;
 
@@ -23,18 +22,18 @@ contract Support is ArbDeployAddr, ISupport {
     function getTVL(
         PythView memory _prices
     ) public view returns (TVL memory tvl) {
-        View.Protocol memory p = KRESKO.viewProtocolData(_prices);
+        Protocol memory p = core.aDataProtocol(_prices);
 
         tvl.diamond = p.tvl;
         tvl.vkiss += vault.totalAssets().toDec(18, 8); // kiss vault
 
         // synthwraps
         for (uint256 i; i < p.assets.length; i++) {
-            if (p.assets[i].synthwrap.underlying == address(0)) continue;
-            View.AssetView memory a = p.assets[i];
-            tvl.wraps += IERC20(a.synthwrap.underlying)
+            if (p.assets[i].wrap.underlying == address(0)) continue;
+            TAsset memory a = p.assets[i];
+            tvl.wraps += IERC20(a.wrap.underlying)
                 .balanceOf(a.addr)
-                .toWad(a.synthwrap.underlyingDecimals)
+                .toWad(a.wrap.underlyingDec)
                 .wmul(a.price);
             tvl.wraps += a.addr.balance.wmul(a.price);
         }

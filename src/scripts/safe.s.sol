@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SafeTx} from "kr/vm/SafeTx.s.sol";
-import {KrBase} from "s/base/KrBase.s.sol";
-import {Utils} from "kr/utils/Libs.sol";
-import {PLog} from "kr/vm/PLog.s.sol";
+import {SafeTx} from "kopio/vm/SafeTx.s.sol";
+import {Base} from "s/base/Base.s.sol";
+import {Utils} from "kopio/utils/Libs.sol";
+import {PLog} from "kopio/vm/PLog.s.sol";
 
-contract krsafe is KrBase, SafeTx {
+contract safe is Base, SafeTx {
     using PLog for *;
     using Utils for *;
 
     function setUp() public virtual {
-        super.safeBase("MNEMONIC", "SAFE_NETWORK");
+        super.safeBase("MNEMONIC_KOPIO", "SAFE_NETWORK");
     }
 
-    function krSafeTx() public {
+    function safeTx() public {
         _transaction();
     }
 

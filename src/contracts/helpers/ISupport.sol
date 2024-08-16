@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {PythView} from "kr/vendor/Pyth.sol";
+import {PythView} from "kopio/vendor/Pyth.sol";
 
 interface ISupport {
     struct TVL {

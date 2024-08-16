@@ -1,7 +1,7 @@
-import { fetchPythData } from '@kr/pyth/pyth-hermes'
-import { arb } from '@kr/viem/clients'
-import { iDataConfig } from '@kr/viem/contracts/iData'
-import { divider, formatAmount, formatPosition, formatPrice } from '@kr/viem/logging'
+import { fetchPythData } from '@kopio/pyth/pyth-hermes'
+import { arb } from '@kopio/viem/clients'
+import { iDataConfig } from '@kopio/viem/contracts/iData'
+import { divider, formatAmount, formatPosition, formatPrice } from '@kopio/viem/logging'
 import { formatUnits } from 'viem/utils'
 
 const pythPayload = await fetchPythData(

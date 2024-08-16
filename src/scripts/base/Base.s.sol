@@ -2,12 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import {IKreditsDiamond} from "kr/core/IKreditsDiamond.sol";
-import {Cutter} from "kr/vm-ffi/Cutter.s.sol";
-import {Based} from "kr/vm/Based.s.sol";
-import {IKresko} from "kr/core/IKresko.sol";
+import {IKreditsDiamond} from "c/interfaces/IKreditsDiamond.sol";
+import {Cutter} from "kopio/vm-ffi/Cutter.s.sol";
+import {Based} from "kopio/vm/Based.s.sol";
+import {IKopioCore} from "kopio/IKopioCore.sol";
+import {kr} from "c/helpers/Kresko.sol";
+import {IProxyFactory} from "kopio/IProxyFactory.sol";
 
-contract KrBase is Cutter, Based {
+contract Base is Cutter, Based {
     address[] testAccs = [
         0x5a6B3E907b83DE2AbD9010509429683CF5ad5984, // dev
         0x99999A0B66AF30f6FEf832938a5038644a72180a, // self
@@ -22,6 +24,6 @@ contract KrBase is Cutter, Based {
         0x36d50Cf7b7dfac786f3F14d251299F0593517E17, // miko
         0x361Bae08CDd251b022889d8eA9fb8ddb84012516
     ];
-    IKresko constant kresko = IKresko(kreskoAddr);
-    IKreditsDiamond constant kredits = IKreditsDiamond(kreditsAddr);
+    IKopioCore constant core = IKopioCore(protocolAddr);
+    IKreditsDiamond constant kredits = IKreditsDiamond(kr.kreditsAddr);
 }
