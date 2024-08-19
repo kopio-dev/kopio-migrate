@@ -16,8 +16,16 @@ contract ktx is Base {
     using Utils for *;
 
     function setUp() public virtual {
-        base("MNEMONIC_KOPIO", "arbitrum", 243212200);
+        base("MNEMONIC_KOPIO", "arbitrum", 243519352);
     }
 
-    function kopioTx() public withJSON("data-v3") broadcasted(sender) {}
+    function kopioTx() public broadcasted(sender) {
+        // usdce.approve(oneAddr, type(uint256).max);
+        // usdc.approve(oneAddr, type(uint256).max);
+        // (uint256 usdcIn, ) = vault.previewMint(usdceAddr, 5 ether);
+        // one.vaultDeposit(usdceAddr, usdcIn, sender);
+        // one.vaultMint(usdceAddr, 5 ether, sender);
+        // one.vaultDeposit(usdcAddr, usdcIn, sender);
+        // one.vaultMint(usdcAddr, 5 ether, sender);
+    }
 }

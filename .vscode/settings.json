@@ -4,6 +4,10 @@
   "solidity.project.libs": [
     "lib"
   ],
+  "solidity.project.libSources": [
+    "src",
+    "contracts"
+  ],
   "solidity.test": {
     "executeOnSave": true,
     "verbosity": 3
