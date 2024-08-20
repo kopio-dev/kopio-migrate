@@ -1,20 +1,6 @@
 # sol/ts base
 
-Lightweight repository for the Kresko Protocol.
-
-Solidity:
-
-- Includes a regular script + connected test in `kr.s.sol/kredits.s.sol`.
-- Includes a forking script + connected test in `kr-fork.s.sol/kredits-fork.s.sol`.
-- Includes a multisig script + connected test in `kr-safe.s.sol/kredits-safe.s.sol`.
-- Code goes in src: `contracts/test/scripts`.
-
-- Includes pyth/diamond utils in `s/base/KrBase.s.sol` - included in above scripts.
-
-Typescript:
-
-- Includes viem/pyth utils in `@kr/viem` and `@kr/pyth`.
-- Code goes in `src/ts`
+Migrator contracts from kresko to kopio.
 
 ## Setup
 
@@ -25,14 +11,10 @@ just setup && cp .env.example > .env
 The string network correspond to `foundry.toml` names.
 
 ```shell
-KRESKO_NETWORK= # Used for KreskoScript.s.sol / KreskoScript.t.sol
-KRESKO_FORK= # Used for KreskoScriptFork.s.sol / KreskoScriptFork.t.sol
-RPC_KRESKO_FORK= # RPC url for the "kresko-fork"
+NETWORK= # Used for .s.sol / .t.sol
+KRESKO_FORK= # Used for fork.s.sol / fork.t.sol
+RPC_FORK= # RPC url for the "kopio-fork"
 RPC_ARBITRUM_ALCHEMY= # fallback RPC (for arb)
-
-KREDITS_NETWORK= # Used for KredScript.s.sol / KredScript.t.sol
-KREDITS_FORK= # Used for KredScriptFork.s.sol / KredScriptFork.t.sol
-RPC_KREDITS_FORK= # RPC url for the "kredits-fork"
 
 SAFE_NETWORK= # Use for *Safe.s.sol / *Safe.t.sol
 SAFE_CHAIN_ID= # Matches the above network.
@@ -162,9 +144,9 @@ just safe-del 0xSAFE_TX_HASH
 or
 
 ```shell
-bun lib/kresko-lib/utils/ffi-safe.ts deleteBatch 0xSAFE_TX_HASH
+bun lib/kopio-lib/utils/ffi-safe.ts deleteBatch 0xSAFE_TX_HASH
 ```
 
 ## Misc
 
-- Look into `lib/kresko-lib/utils/ffi-safe.ts` for other available commands using `bun lib/kresko-lib/utils/ffi-safe.ts command ...args`
+- Look into `lib/kopio-lib/utils/ffi-safe.ts` for other available commands using `bun lib/kopio-lib/utils/ffi-safe.ts command ...args`
