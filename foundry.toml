@@ -11,11 +11,17 @@ cache_path = 'build/cache'
 
 evm_version = "cancun"
 
-remappings = ["c/=src/contracts/", 's/=src/scripts/', 't/=src/test/', 'kopio/=lib/kopio-lib/src/']
+remappings = [
+  "c/=src/contracts/",
+  's/=src/scripts/',
+  't/=src/test/',
+  'kopio/=lib/kopio-lib/src/',
+  'kresko/=lib/kresko-lib/src/',
+]
 
 ffi = true
 
-via_IR = false
+via_IR = true
 optimizer = true
 optimizer_runs = 1000
 
