@@ -10,6 +10,7 @@ import {Migrator} from "c/migrator/Migrator.sol";
 import {IMigrator} from "c/migrator/IMigrator.sol";
 import {MigrationRouter} from "c/migrator/router/MigrationRouter.sol";
 import {SafeScript} from "kopio/vm-ffi/SafeScript.s.sol";
+import {PythUpdater} from "c/migrator/PythUpdater.sol";
 
 contract MigrationDeploy is SafeScript, Base {
     using PLog for *;
@@ -23,6 +24,37 @@ contract MigrationDeploy is SafeScript, Base {
 
     function setUp() public virtual {
         base("MNEMONIC_KOPIO", "arbitrum");
+    }
+
+    function deployPythUpdater() external broadcastedById(0) {
+        // bytes32 salt = 0xfeefeefee4cc1f612d3c3810e4deec59daf49d40;
+        bytes32 salt = 0x37f4b7730f140871991c78a3e866294fe500b653ca82273b7bfad8045d85a470;
+
+        bytes memory ctor = abi.encode(getAddr(0));
+
+        jsons("ctor-pythupdater", ctor);
+        bytes memory impl = bytes.concat(type(PythUpdater).creationCode, ctor);
+
+        address updater = factory
+        .deployCreate3{value: 1e9}(impl, "", salt).implementation;
+
+        updater.clg("updater");
+    }
+
+    function updateMigrationRouter() public broadcastedById(0) {
+        router = MigrationRouter(payable(routerAddr));
+        Route[] memory funcs = new Route[](2);
+
+        funcs[0] = Route({
+            impl: address(new Migrator()),
+            sig: Migrator.migrate.selector
+        });
+        funcs[1] = Route({
+            impl: funcs[0].impl,
+            sig: Migrator.onUncheckedCollateralWithdraw.selector
+        });
+        router.setRoute(funcs[0]);
+        router.setRoute(funcs[1]);
     }
 
     function deployMigrationRouter(

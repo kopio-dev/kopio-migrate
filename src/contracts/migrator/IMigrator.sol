@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import {Asset, Kresko} from "c/helpers/Kresko.sol";
 import {ArbDeploy} from "kopio/info/ArbDeploy.sol";
 import {IKopioCore} from "kopio/IKopioCore.sol";
+import {IPyth} from "kopio/vendor/Pyth.sol";
 
 interface ICollateralReceiver {
     function onUncheckedCollateralWithdraw(
@@ -39,6 +40,7 @@ struct MigratorState {
 
 abstract contract IMigrator is ArbDeploy, Kresko {
     IKopioCore constant core = IKopioCore(protocolAddr);
+    IPyth constant pyth = IPyth(0xfeEFeEfeED0bd9Df8d23dC0242FEF943c574468f);
 
     struct Token {
         address addr;

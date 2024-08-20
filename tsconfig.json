@@ -39,6 +39,7 @@
     "temp.ts",
     "src",
     "lib/kopio-lib/utils",
-    "utils"
+    "utils",
+    "temp/fork-dist-1/test.ts"
   ]
 }

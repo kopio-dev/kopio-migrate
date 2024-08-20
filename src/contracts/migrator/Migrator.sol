@@ -6,12 +6,11 @@ import {Utils} from "kopio/utils/Libs.sol";
 import {MigrationLogic, TKresko} from "c/migrator/MigratorBase.sol";
 import {LibMigration} from "c/migrator/LibMigration.sol";
 import {ICollateralReceiver} from "c/migrator/IMigrator.sol";
-import {PLog} from "kopio/vm/PLog.s.sol";
 import {Positions} from "c/migrator/LibMigration.sol";
+import {IERC20} from "kopio/token/IERC20.sol";
 
 contract Migrator is ICollateralReceiver, MigrationLogic {
     using Utils for *;
-    using PLog for *;
 
     function migrate(
         address account,
@@ -19,15 +18,16 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
     ) public payable override returns (MigrationResult memory result) {
         result.account = account;
 
-        pythEP.updatePriceFeeds{value: pythEP.getUpdateFee(prices)}(prices);
+        pyth.updatePriceFeeds(prices);
 
         result = LibMigration.getValues(account, result, true);
         if (
             result.kresko.valSCDPBefore == 0 && result.kresko.valCollBefore == 0
         ) return result;
 
-        if (result.kresko.valSCDPBefore != 0)
+        if (result.kresko.valSCDPBefore != 0) {
             result.scdp = _handleSCDP(account);
+        }
 
         if (result.kresko.valCollBefore != 0) {
             _handleMinter(account);
@@ -43,6 +43,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
         result.icdpDebt = ms().txDebt;
 
         if (msg.sender == address(this)) revert MigrationPreview(result);
+        if (msg.sender != account) revert InvalidSender(msg.sender);
 
         if (result.slippage < 100e2 - ms().maxSlippage) {
             revert Slippage(
@@ -173,15 +174,22 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
             _withdrawUncheck(account, ++idx);
         }
 
-        uint256 feeValueApprox = ms().debtValue.pdiv(95e2) - ms().debtValue;
-        kresko.depositCollateral(
-            account,
-            ms().posColl[0].a.addr,
-            _toAmount(ms().posColl[0], feeValueApprox)
-        );
+        uint256 feeValueApprox = ms().debtValue.pmul(3.5e2);
+        bool didAddFees;
 
         for (uint256 i; i < ms().posColl.length; i++) {
             Pos storage coll = ms().posColl[i];
+            if (!didAddFees && coll.value >= feeValueApprox) {
+                uint256 bal = IERC20(coll.a.addr).balanceOf(address(this));
+                uint256 forFees = _toAmount(coll, feeValueApprox);
+                kresko.depositCollateral(
+                    account,
+                    coll.a.addr,
+                    bal < forFees ? bal : forFees
+                );
+
+                didAddFees = true;
+            }
 
             for (uint256 j; j < ms().posDebt.length; j++) {
                 Pos storage debt = ms().posDebt[j];
@@ -194,7 +202,11 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
                 if (burnAmount == 0) continue;
 
                 ms().assetsUsed.pushUnique(debt.a.addr);
-                _burn(account, debt.a.addr, burnAmount);
+                _burn(
+                    account,
+                    debt.a.addr,
+                    burnAmount > debtAmount ? debtAmount : burnAmount
+                );
 
                 if (bal(debt.a.addr) != 0) {
                     _toAsset(debt.a.addr, coll.a.addr, bal(debt.a.addr));

@@ -15,13 +15,13 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
     address depositor = makeAddr("depositor");
 
     function setUp() public override {
-        base("MNEMONIC_KOPIO", "arbitrum", 244824588);
+        base("MNEMONIC_KOPIO", "arbitrum", 244859328);
         syncTime();
         updatePyth();
 
         prank(sender);
         // deployMigrationRouter(sender);
-        vm.allowCheatcodes(routerAddr);
+        // vm.allowCheatcodes(routerAddr);
 
         setupKresko();
         setupKopio();
@@ -32,6 +32,8 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
         one.approve(address(core), type(uint256).max);
         one.vaultDeposit(usdceAddr, 10_000e6, depositor);
         core.depositSCDP(depositor, oneAddr, one.balanceOf(depositor));
+
+        updateMigrationRouter();
     }
 
     function setupKopio() internal pranked(safe) {
@@ -64,9 +66,10 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
         }
     }
     function testPreview() public {
-        migrator.previewMigrate(testUsers[0], pyth.update).slippage.plg(
+        _migrateUser(0x0a7f988B6cEa3081EBa2896C4f0793c19d2A775E).slippage.plg(
             "Slippage"
         );
+        migrator.previewMigrate(testUsers[0], pyth.update).slippage.plg("slip");
     }
 
     function _migrateUser(
