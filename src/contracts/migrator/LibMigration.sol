@@ -83,6 +83,7 @@ library LibMigration {
         if (before) {
             out.kresko.valSCDPBefore = krSCDP;
             out.kresko.valCollBefore = krColl;
+            out.kresko.valDebtBefore = krDebt;
             out.kresko.valTotalBefore = krTotal;
 
             out.kopio.valSCDPBefore = kopioSCDP;
