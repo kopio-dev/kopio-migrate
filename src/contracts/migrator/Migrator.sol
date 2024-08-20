@@ -61,6 +61,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
         address account
     ) internal returns (Transfer memory transfer) {
         transfer.asset = kissAddr;
+
         uint256 balBefore = bal(transfer.asset);
         transfer.destination = oneAddr;
         transfer.amount = kresko.getAccountDepositSCDP(account, transfer.asset);
@@ -87,10 +88,12 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
             transfer.destination,
             bal(transfer.destination)
         );
+
         transfer.amountTransferred = core.getAccountDepositSCDP(
             account,
             transfer.destination
         );
+
         emit PositionTransferred(
             account,
             transfer.asset,
