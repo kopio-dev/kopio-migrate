@@ -1,33 +1,50 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
+import {Utils} from "kopio/utils/Libs.sol";
+import {PLog} from "kopio/vm/PLog.s.sol";
+import {Base} from "s/base/Base.s.sol";
 
-import {Route} from "./IMigrationRouter.sol";
-import {MigrationRouter} from "./MigrationRouter.sol";
-import {Based} from "kopio/vm/Based.s.sol";
-import {MigrationExtras} from "../MigrationExtras.sol";
+import {Route} from "c/migrator/router/IMigrationRouter.sol";
+import {MigrationExtras} from "c/migrator/MigrationExtras.sol";
 import {Migrator} from "c/migrator/Migrator.sol";
 import {IMigrator} from "c/migrator/IMigrator.sol";
-import {ArbDeployAddr} from "kopio/info/ArbDeployAddr.sol";
+import {MigrationRouter} from "c/migrator/router/MigrationRouter.sol";
 
-abstract contract MigrationRouterDeploy is ArbDeployAddr, Based {
+contract MigrationDeploy is Base {
+    using PLog for *;
+    using Utils for *;
+
     Migrator migrator;
     MigrationRouter router;
     address routerAddr;
 
-    function deployMigrationRouter(address owner) internal broadcasted(owner) {
-        address _migrator = address(new Migrator());
-        address _init = address(new MigrationExtras());
+    Route[] internal routes;
 
-        router = new MigrationRouter(owner, getRoutes(_migrator, _init));
+    function setUp() public virtual {
+        base("MNEMONIC_KOPIO", "arbitrum", 243519352);
+    }
+
+    function deployMigrationRouter(
+        address owner
+    ) internal broadcasted(owner) withJSON("MigrationRouter") {
+        jsonKey("deployment");
+        json(owner, "owner");
+        address _migrator = address(new Migrator());
+        json(_migrator, "migrator");
+        address _extras = address(new MigrationExtras());
+        json(_extras, "extras");
+
+        router = new MigrationRouter(owner, getRoutes(_migrator, _extras));
         routerAddr = address(router);
+        json(routerAddr, "router");
 
         migrator = Migrator(address(router));
+
         MigrationExtras(routerAddr).initializeMigrationState();
         payable(routerAddr).transfer(1e9);
         router.authorize(safe);
     }
 
-    Route[] internal routes;
     function getRoutes(
         address _logic,
         address _extras
