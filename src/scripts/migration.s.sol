@@ -9,19 +9,20 @@ import {MigrationExtras} from "c/migrator/MigrationExtras.sol";
 import {Migrator} from "c/migrator/Migrator.sol";
 import {IMigrator} from "c/migrator/IMigrator.sol";
 import {MigrationRouter} from "c/migrator/router/MigrationRouter.sol";
+import {SafeScript} from "kopio/vm-ffi/SafeScript.s.sol";
 
-contract MigrationDeploy is Base {
+contract MigrationDeploy is SafeScript, Base {
     using PLog for *;
     using Utils for *;
 
-    Migrator migrator;
+    Migrator migrator = Migrator(0xaaaaaAaAaAa186774266Ea9b3FC0B588B3232795);
     MigrationRouter router;
-    address routerAddr;
+    address routerAddr = 0xaaaaaAaAaAa186774266Ea9b3FC0B588B3232795;
 
     Route[] internal routes;
 
     function setUp() public virtual {
-        base("MNEMONIC_KOPIO", "arbitrum", 243519352);
+        base("MNEMONIC_KOPIO", "arbitrum");
     }
 
     function deployMigrationRouter(
@@ -34,15 +35,33 @@ contract MigrationDeploy is Base {
         address _extras = address(new MigrationExtras());
         json(_extras, "extras");
 
-        router = new MigrationRouter(owner, getRoutes(_migrator, _extras));
-        routerAddr = address(router);
+        bytes memory ctor = abi.encode(owner, getRoutes(_migrator, _extras));
+        json(ctor, "ctor");
+        bytes memory routerImpl = abi.encodePacked(
+            type(MigrationRouter).creationCode,
+            ctor
+        );
+
+        routerAddr = factory
+            .deployCreate3(
+                routerImpl,
+                "",
+                0x263519a90d43362f176df75009b92836e500b653ca82273b7bfad8045d85a470
+            )
+            .implementation;
         json(routerAddr, "router");
+
+        router = MigrationRouter(payable(routerAddr));
+        routerAddr = address(router);
 
         migrator = Migrator(address(router));
 
         MigrationExtras(routerAddr).initializeMigrationState();
         payable(routerAddr).transfer(1e9);
         router.authorize(safe);
+
+        core.grantRole(keccak256("kopio.role.manager"), routerAddr);
+        jsonKey();
     }
 
     function getRoutes(

@@ -15,12 +15,12 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
     address depositor = makeAddr("depositor");
 
     function setUp() public override {
-        base("MNEMONIC_KOPIO", "arbitrum", 244630947);
+        base("MNEMONIC_KOPIO", "arbitrum", 244824588);
         syncTime();
         updatePyth();
 
         prank(sender);
-        deployMigrationRouter(sender);
+        // deployMigrationRouter(sender);
         vm.allowCheatcodes(routerAddr);
 
         setupKresko();
@@ -35,12 +35,7 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
     }
 
     function setupKopio() internal pranked(safe) {
-        core.grantRole(keccak256("kopio.role.manager"), routerAddr);
         core.setOracleDeviation(10e2);
-        kETH.setUnderlying(wethAddr);
-        kETH.setCloseFee(20);
-        kETH.setOpenFee(15);
-        kETH.enableNative(true);
 
         bytes32[] memory markets = new bytes32[](3);
         bool[] memory statuses = new bool[](3);

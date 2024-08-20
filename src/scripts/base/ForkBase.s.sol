@@ -15,7 +15,7 @@ abstract contract ForkBase is Base {
         Usable,
         UsableFunded
     }
-
+    address[] testAccs;
     function setupFork(Fork _mode) public {
         if (_mode == Fork.None) return;
         if (_mode == Fork.Funded) return fund(testAccs);
