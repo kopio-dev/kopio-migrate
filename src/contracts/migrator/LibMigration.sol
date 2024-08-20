@@ -2,10 +2,16 @@
 pragma solidity ^0.8.0;
 
 import {kr} from "c/migrator/Kresko.sol";
-import {kopioCore} from "c/migrator/LibKopio.sol";
 import {Utils} from "kopio/utils/Libs.sol";
 import {Log} from "kopio/vm/VmLibs.s.sol";
 import {Migrator} from "c/migrator/Migrator.sol";
+import {IData} from "kopio/support/IData.sol";
+import {IKopioCore} from "kopio/IKopioCore.sol";
+
+IData constant kopioData = IData(0xddDdDddDDd14aC7aB83F957b804e6b714b75179E);
+IKopioCore constant kopioCore = IKopioCore(
+    0x000000000000dcC1394A66cD4f84Fb38932a0fAB
+);
 
 library LibMigration {
     using Utils for *;
