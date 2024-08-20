@@ -3,11 +3,11 @@
 pragma solidity ^0.8.0;
 
 import {Utils} from "kopio/utils/Libs.sol";
-import {MigrationLogic} from "c/migrator/MigratorBase.sol";
+import {MigrationLogic, TKresko} from "c/migrator/MigratorBase.sol";
 import {LibMigration} from "c/migrator/LibMigration.sol";
 import {ICollateralReceiver} from "c/migrator/IMigrator.sol";
 import {PLog} from "kopio/vm/PLog.s.sol";
-import {Positions, Kr} from "c/migrator/Kresko.sol";
+import {Positions} from "c/migrator/LibMigration.sol";
 
 contract Migrator is ICollateralReceiver, MigrationLogic {
     using Utils for *;
@@ -16,7 +16,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
     function migrate(
         address account,
         bytes[] calldata prices
-    ) public override returns (MigrationResult memory result) {
+    ) public payable override returns (MigrationResult memory result) {
         result.account = account;
 
         pythEP.updatePriceFeeds{value: pythEP.getUpdateFee(prices)}(prices);
@@ -53,6 +53,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
             );
         }
 
+        emit Migration(account, result.valueBefore, result.valueNow);
         clearState();
     }
 
@@ -65,7 +66,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
         transfer.amount = kresko.getAccountDepositSCDP(account, transfer.asset);
 
         kresko.withdrawSCDP(
-            Kr.SCDPWithdrawArgs(
+            TKresko.SCDPWithdrawArgs(
                 account,
                 transfer.asset,
                 transfer.amount,

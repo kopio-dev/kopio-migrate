@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {Tested} from "kopio/vm/Tested.t.sol";
 import {Migrator, MigrationDeploy, Utils} from "s/migration.s.sol";
 import {Log} from "kopio/vm/VmLibs.s.sol";
-import {Kresko} from "c/migrator/Kresko.sol";
+import {Kresko} from "c/helpers/Kresko.sol";
 import {KreskoSetup, TestUsers} from "t/migration-util.t.sol";
 import {Role} from "kresko/core/types/Role.sol";
 

@@ -6,8 +6,7 @@ import {IKreditsDiamond} from "c/interfaces/IKreditsDiamond.sol";
 import {Cutter} from "kopio/vm-ffi/Cutter.s.sol";
 import {Based} from "kopio/vm/Based.s.sol";
 import {IKopioCore} from "kopio/IKopioCore.sol";
-import {kr} from "c/helpers/Kresko.sol";
-import {IProxyFactory} from "kopio/IProxyFactory.sol";
+import {kreditsAddr} from "c/helpers/Kresko.sol";
 
 contract Base is Cutter, Based {
     address[] testAccs = [
@@ -25,5 +24,5 @@ contract Base is Cutter, Based {
         0x361Bae08CDd251b022889d8eA9fb8ddb84012516
     ];
     IKopioCore constant core = IKopioCore(protocolAddr);
-    IKreditsDiamond constant kredits = IKreditsDiamond(kr.kreditsAddr);
+    IKreditsDiamond constant kredits = IKreditsDiamond(kreditsAddr);
 }

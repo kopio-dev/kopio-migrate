@@ -8,9 +8,9 @@ import {IERC20} from "kopio/token/IERC20.sol";
 import {ISwapRouter} from "kopio/vendor/ISwapRouter.sol";
 import {Utils} from "kopio/utils/Libs.sol";
 import {__revert} from "kopio/utils/Funcs.sol";
-import {Kr} from "c/migrator/Kresko.sol";
 import {IMigrator} from "./IMigrator.sol";
 import {LibMigration} from "c/migrator/LibMigration.sol";
+import "kresko/core/types/Args.sol" as TKresko;
 
 using Utils for uint256;
 
@@ -198,7 +198,7 @@ abstract contract MigrationLogic is MigrationAssets {
 
     function _withdrawUncheck(address account, uint256 idx) internal {
         kresko.withdrawCollateralUnchecked(
-            Kr.UncheckedWithdrawArgs({
+            TKresko.UncheckedWithdrawArgs({
                 account: account,
                 asset: ms().posColl[idx].a.addr,
                 amount: type(uint256).max,
@@ -222,7 +222,7 @@ abstract contract MigrationLogic is MigrationAssets {
         uint256 balBefore = bal(_to);
         try
             kresko.swapSCDP(
-                Kr.SwapArgs({
+                TKresko.SwapArgs({
                     assetIn: _from,
                     assetOut: _to,
                     amountIn: _amtIn,
@@ -285,7 +285,7 @@ abstract contract MigrationLogic is MigrationAssets {
 
     function _burn(address account, address asset, uint256 amount) internal {
         kresko.burnKreskoAsset(
-            Kr.BurnArgs({
+            TKresko.BurnArgs({
                 account: account,
                 krAsset: asset,
                 amount: amount,
@@ -304,7 +304,7 @@ abstract contract MigrationLogic is MigrationAssets {
         if (deposits == 0) return 0;
 
         kresko.withdrawCollateral(
-            Kr.WithdrawArgs({
+            TKresko.WithdrawArgs({
                 account: account,
                 asset: asset,
                 amount: deposits,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {Kresko, Kr} from "./Kresko.sol";
+import {Asset, Kresko} from "c/helpers/Kresko.sol";
 import {ArbDeploy} from "kopio/info/ArbDeploy.sol";
 import {IKopioCore} from "kopio/IKopioCore.sol";
 
@@ -22,9 +22,7 @@ bytes32 constant MIGRATOR_SLOT = keccak256(
 ) & ~bytes32(uint256(0xff));
 
 struct MigratorState {
-    // mapping of kresko asset to kopio asset
     mapping(address => address) getAsset;
-    // mapping of kredits to points
     mapping(address => uint256) points;
     address[] krAssets;
     address[] kopios;
@@ -44,7 +42,7 @@ abstract contract IMigrator is ArbDeploy, Kresko {
 
     struct Token {
         address addr;
-        Kr.Asset asset;
+        Asset asset;
     }
 
     struct Pos {
@@ -76,6 +74,8 @@ abstract contract IMigrator is ArbDeploy, Kresko {
     error ZeroAmount(address);
 
     error MigrationPreview(MigrationResult);
+
+    event Migration(address, uint256, uint256);
 
     struct Transfer {
         address asset;
@@ -129,12 +129,12 @@ abstract contract IMigrator is ArbDeploy, Kresko {
     function migrate(
         address account,
         bytes[] calldata prices
-    ) external virtual returns (MigrationResult memory result) {}
+    ) external payable virtual returns (MigrationResult memory result) {}
 
     function previewMigrate(
         address account,
         bytes[] calldata prices
-    ) external virtual returns (MigrationResult memory result) {}
+    ) external payable virtual returns (MigrationResult memory result) {}
 
     function getPreviewResult(
         bytes calldata _errorData

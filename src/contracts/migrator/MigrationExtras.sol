@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 import {IMigrator} from "./IMigrator.sol";
 import {IERC20} from "kopio/token/IERC20.sol";
 import {IMigrationRouter} from "c/migrator/router/MigrationRouter.sol";
+import {kredits} from "c/helpers/Kresko.sol";
 
 // solhint-disable no-empty-blocks, gas-custom-errors
 
@@ -67,7 +68,7 @@ contract MigrationExtras is IMigrationRouter, IMigrator {
     function previewMigrate(
         address account,
         bytes[] calldata prices
-    ) external override returns (MigrationResult memory) {
+    ) external payable override returns (MigrationResult memory) {
         try this.migrate(account, prices) returns (
             MigrationResult memory
         ) {} catch (bytes memory reason) {
@@ -81,6 +82,10 @@ contract MigrationExtras is IMigrationRouter, IMigrator {
         bytes calldata _errorData
     ) external pure override returns (MigrationResult memory) {
         return abi.decode(_errorData[4:], (MigrationResult));
+    }
+
+    function getPoints(address account) public view returns (uint256) {
+        return ms().points[account];
     }
 
     function _approvals() private {
@@ -148,6 +153,14 @@ contract MigrationExtras is IMigrationRouter, IMigrator {
                 item.amount,
                 transfer.amountTransferred
             );
+        }
+
+        _setKredits(account);
+    }
+
+    function _setKredits(address account) internal {
+        if (ms().points[account] == 0) {
+            ms().points[account] = kredits.getAccountInfo(account).points;
         }
     }
 }
