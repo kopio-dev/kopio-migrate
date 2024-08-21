@@ -110,69 +110,33 @@ abstract contract MigrationAssets is IMigrator {
 
 abstract contract MigrationLogic is MigrationAssets {
     function _depositKopio(address account, Transfer storage item) internal {
-        uint256 depositAmount = item.amount - item.amountTransferred;
-
-        if (depositAmount == 0) return;
-
         address depositAsset = item.destination != address(0)
             ? item.destination
             : item.asset;
 
-        depositAmount = amt(depositAsset, depositAmount);
-
+        uint256 depositAmount = amt(
+            depositAsset,
+            item.amount - item.amountTransferred
+        );
         if (depositAmount == 0) return;
-
         core.depositCollateral(account, depositAsset, depositAmount);
         item.amountTransferred += depositAmount;
     }
 
-    function _handleLeverage(address account) internal {
-        bool found = true;
-
-        while (found) {
-            (
-                bool _found,
-                Transfer storage coll,
-                Transfer storage debt
-            ) = LibMigration.getLeverage(ms().txColl, ms().txDebt);
-            found = _found;
-
-            uint256 amountIn = amt(
-                debt.asset,
-                convertAmt(
-                    coll.asset,
-                    coll.amount - coll.amountTransferred,
-                    debt.asset,
-                    0
-                )
-            );
-
-            if (amountIn == 0) break;
-            if (coll.asset != debt.asset)
-                _toAsset(debt.asset, coll.asset, amountIn);
-
-            _depositKopio(account, coll);
-            _mintKopioDebt(account, debt);
-        }
-    }
-
-    function _mintKopioDebt(
-        address account,
-        Transfer storage item
-    ) internal returns (bool) {
+    function _mintKopioDebt(address account, Transfer storage item) internal {
         uint256 amount = item.amount - item.amountTransferred;
-        if (amount == 0) return true;
-        amount = amount / 2;
+        if (amount == 0) return;
+
         uint256 mintAmount = _getMintAmount(account, item.destination, amount);
 
-        if (mintAmount == 0) return true;
+        if (mintAmount == 0) return;
         core.mintKopio(
             MintArgs(account, item.destination, mintAmount, address(this)),
             new bytes[](0)
         );
         item.amountTransferred += mintAmount;
 
-        return false;
+        return;
     }
 
     function _getMintAmount(
@@ -181,10 +145,12 @@ abstract contract MigrationLogic is MigrationAssets {
         uint256 amount
     ) internal view returns (uint256 result) {
         uint256 assetPrice = core.getPrice(kopio).pmul(
-            core.getAsset(kopio).dFactor + core.getMCR() + 10e2
+            core.getAsset(kopio).dFactor + 150e2
         );
 
-        uint256 valueAvailable = core.getAccountTotalCollateralValue(account);
+        uint256 valueAvailable = core.getAccountTotalCollateralValue(account) -
+            core.getAccountMinCollateralAtRatio(account, 150e2);
+        if (valueAvailable < 0.01e8) return 0;
         uint256 debtVal = amount != 0
             ? assetPrice.wmul(amount)
             : valueAvailable + 1;
@@ -362,7 +328,7 @@ abstract contract MigrationLogic is MigrationAssets {
     ) internal returns (uint256 amountOut) {
         amount = amt(from, amount);
 
-        if (from == to) return amount;
+        if (from == to || amount == 0) return amount;
 
         if (isVaultAsset(from)) {
             if (isVaultAsset(to)) {
@@ -532,9 +498,8 @@ abstract contract MigrationLogic is MigrationAssets {
         uint256 value = kresko.getValue(debt.a.addr, debtAmount).pmul(105e2);
         value = value > coll.value ? coll.value : value;
 
-        address collAddr = coll.a.addr;
-        if (collAddr != debt.a.addr) {
-            _toAsset(collAddr, debt.a.addr, _toAmount(coll, value));
+        if (coll.a.addr != debt.a.addr) {
+            _toAsset(coll.a.addr, debt.a.addr, _toAmount(coll, value));
         }
 
         uint256 received = bal(debt.a.addr);
@@ -558,7 +523,7 @@ abstract contract MigrationLogic is MigrationAssets {
         if (amtOut == 0) revert ZeroAmount(from);
     }
 
-    function convertAmt(
+    function _convertAmt(
         address from,
         uint256 amount,
         address to,

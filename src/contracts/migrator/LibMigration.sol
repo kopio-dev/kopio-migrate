@@ -25,8 +25,7 @@ library LibMigration {
     }
 
     function getLeverage(
-        Migrator.Transfer[] storage collaterals,
-        Migrator.Transfer[] storage debts
+        MigratorState storage ms
     )
         internal
         returns (
@@ -37,10 +36,9 @@ library LibMigration {
     {
         uint256 collateral;
         uint256 debt;
-        for (uint256 i; i < collaterals.length; i++) {
-            Migrator.Transfer storage item = collaterals[i];
-            if (item.amount == 0) continue;
-            if (item.amountTransferred.pmul(102e2) < item.amount) {
+        for (uint256 i; i < ms.txColl.length; i++) {
+            Migrator.Transfer storage item = ms.txColl[i];
+            if (item.amountTransferred < item.amount) {
                 item.asset = LibMigration.getAsset(item);
                 item.idx = (collateral = i);
                 found = true;
@@ -48,29 +46,29 @@ library LibMigration {
             }
         }
 
-        for (uint256 i; i < debts.length; i++) {
-            Migrator.Transfer storage item = debts[i];
-            if (item.amount == 0) continue;
-            if (item.amountTransferred.pmul(102e2) < item.amount) {
+        for (uint256 i; i < ms.txDebt.length; i++) {
+            Migrator.Transfer storage item = ms.txDebt[i];
+            if (item.amountTransferred < item.amount) {
                 item.asset = LibMigration.getAsset(item);
                 item.idx = (debt = i);
                 found = !!found;
                 break;
             }
-            if (i == debts.length - 1) found = false;
+            if (i == ms.txDebt.length - 1) found = false;
         }
 
-        return (found, collaterals[collateral], debts[debt]);
+        return (found, ms.txColl[collateral], ms.txDebt[debt]);
     }
 
     function getValues(
-        address account,
         Migrator.MigrationResult memory out,
+        address account,
         bool before
     ) internal view returns (Migrator.MigrationResult memory) {
         out.account = account;
 
-        uint256 krSCDP = kr.getAccountTotalDepositsValueSCDP(account);
+        uint256 krSCDP = kr.getAccountTotalDepositsValueSCDP(account) +
+            kr.getAccountTotalFeesValueSCDP(account);
         uint256 krColl = kr.getAccountTotalCollateralValue(account);
         uint256 krDebt = kr.getAccountTotalDebtValue(account);
         uint256 krTotal = krSCDP + krColl - krDebt;
@@ -91,7 +89,7 @@ library LibMigration {
             out.kopio.valDebtBefore = kopioDebt;
             out.kopio.valTotalBefore = kopioTotal;
 
-            out.valueBefore = krTotal + kopioTotal;
+            out.valueBefore = (krTotal + kopioTotal);
         } else {
             out.kresko.valSCDP = krSCDP;
             out.kresko.valColl = krColl;
@@ -103,7 +101,7 @@ library LibMigration {
             out.kopio.valDebt = kopioDebt;
             out.kopio.valTotal = kopioTotal;
 
-            out.valueNow = krTotal + kopioTotal;
+            out.valueNow = (krTotal + kopioTotal);
         }
 
         return out;

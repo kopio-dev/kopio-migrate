@@ -6,7 +6,7 @@ import {Migrator, MigrationDeploy, Utils} from "s/migration.s.sol";
 import {Log} from "kopio/vm/VmLibs.s.sol";
 import {Kresko} from "c/helpers/Kresko.sol";
 import {KreskoSetup, TestUsers} from "t/migration-util.t.sol";
-import {Role} from "kresko/core/types/Role.sol";
+import {IERC20} from "kopio/token/IERC20.sol";
 
 contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
     using Log for *;
@@ -15,40 +15,17 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
     address depositor = makeAddr("depositor");
 
     function setUp() public override {
-        base("MNEMONIC_KOPIO", "arbitrum", 244859328);
+        base("MNEMONIC_KOPIO", "arbitrum", 245269894);
         syncTime();
         updatePyth();
 
         prank(sender);
-        // deployMigrationRouter(sender);
-        // vm.allowCheatcodes(routerAddr);
-
-        setupKresko();
-        setupKopio();
-
-        prank(depositor);
-        deal(usdceAddr, depositor, 10_000e6);
-        usdce.approve(address(one), type(uint256).max);
-        one.approve(address(core), type(uint256).max);
-        one.vaultDeposit(usdceAddr, 10_000e6, depositor);
-        core.depositSCDP(depositor, oneAddr, one.balanceOf(depositor));
-
         updateMigrationRouter();
+        setupKresko();
     }
 
     function setupKopio() internal pranked(safe) {
         core.setOracleDeviation(10e2);
-
-        bytes32[] memory markets = new bytes32[](3);
-        bool[] memory statuses = new bool[](3);
-        markets[0] = "FOREX";
-        markets[1] = "XAG";
-        markets[2] = "XAU";
-
-        statuses[0] = true;
-        statuses[1] = true;
-        statuses[2] = true;
-        marketStatus.setStatus(markets, statuses);
     }
 
     function setupKresko() internal pranked(krSafe) {
@@ -56,25 +33,95 @@ contract MigrationTest is TestUsers, Kresko, MigrationDeploy, Tested {
             address(new KreskoSetup()),
             abi.encodeWithSelector(KreskoSetup.run.selector)
         );
-
-        kresko.grantRole(Role.MANAGER, routerAddr);
     }
 
-    function testMigrations() public {
+    function testAllMigrations() public {
         for (uint256 i; i < testUsers.length; i++) {
-            _migrateUser(testUsers[i]).slippage.plg("Slippage");
+            _log(_migrate(testUsers[i]));
         }
     }
-    function testPreview() public {
-        _migrateUser(0x0a7f988B6cEa3081EBa2896C4f0793c19d2A775E).slippage.plg(
-            "Slippage"
-        );
-        migrator.previewMigrate(testUsers[0], pyth.update).slippage.plg("slip");
-    }
 
-    function _migrateUser(
+    function _migrate(
         address user
     ) internal pranked(user) returns (Migrator.MigrationResult memory) {
         return migrator.migrate(user, pyth.update);
+    }
+
+    function _log(Migrator.MigrationResult memory result) internal view {
+        if (result.valueBefore == 0 || result.valueNow == 0) {
+            result.account.clg("No Migration Required: ");
+            return;
+        }
+        Log.hr();
+        for (uint256 i; i < result.icdpColl.length; i++) {
+            Migrator.Transfer memory tf = result.icdpColl[i];
+            IERC20 asset = IERC20(
+                tf.destination != address(0) ? tf.destination : tf.asset
+            );
+            uint8 dec = asset.decimals();
+            string memory info = string.concat(
+                "Collateral: ",
+                asset.symbol(),
+                " Amount: ",
+                tf.amount.dstr(dec),
+                " Amount Transferred: ",
+                tf.amountTransferred.dstr(dec),
+                " Actual:",
+                core
+                    .getAccountCollateralAmount(result.account, address(asset))
+                    .dstr(dec)
+            );
+            info.clg();
+        }
+        Log.hr();
+        for (uint256 i; i < result.icdpDebt.length; i++) {
+            Migrator.Transfer memory tf = result.icdpDebt[i];
+            IERC20 asset = IERC20(tf.destination);
+            string memory info = string.concat(
+                "Debt: ",
+                asset.symbol(),
+                " Amount: ",
+                tf.amount.dstr(),
+                " Amount Transferred: ",
+                tf.amountTransferred.dstr(),
+                " Actual:",
+                core.getAccountDebtAmount(result.account, address(asset)).dstr()
+            );
+
+            info.clg();
+        }
+
+        Log.hr();
+        result.account.clg("Account: ");
+        string memory scdpInfo = string.concat(
+            "SCDP: ",
+            result.kresko.valSCDPBefore.dstr(8),
+            " -> ",
+            result.kopio.valSCDP.dstr(8)
+        );
+        string memory collInfo = string.concat(
+            "Collateral: ",
+            result.kresko.valCollBefore.dstr(8),
+            " -> ",
+            result.kopio.valColl.dstr(8)
+        );
+
+        string memory debtInfo = string.concat(
+            "Debt: ",
+            result.kresko.valDebtBefore.dstr(8),
+            " -> ",
+            result.kopio.valDebt.dstr(8)
+        );
+        string memory totalInfo = string.concat(
+            "Total: ",
+            result.kresko.valTotalBefore.dstr(8),
+            " -> ",
+            result.kopio.valTotal.dstr(8)
+        );
+        scdpInfo.clg();
+        collInfo.clg();
+        debtInfo.clg();
+        totalInfo.clg();
+        result.slippage.plg("Slippage: ");
     }
 }

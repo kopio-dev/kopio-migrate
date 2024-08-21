@@ -5,28 +5,29 @@ pragma solidity ^0.8.0;
 import {Utils} from "kopio/utils/Libs.sol";
 import {MigrationLogic, TKresko} from "c/migrator/MigratorBase.sol";
 import {LibMigration} from "c/migrator/LibMigration.sol";
-import {ICollateralReceiver} from "c/migrator/IMigrator.sol";
+import {ICollateralReceiver, MigratorState} from "c/migrator/IMigrator.sol";
 import {Positions} from "c/migrator/LibMigration.sol";
-import {IERC20} from "kopio/token/IERC20.sol";
 
 contract Migrator is ICollateralReceiver, MigrationLogic {
     using Utils for *;
+    using Positions for MigratorState;
+    using LibMigration for *;
 
     function migrate(
         address account,
         bytes[] calldata prices
     ) public payable override returns (MigrationResult memory result) {
-        result.account = account;
-
         pyth.updatePriceFeeds(prices);
-
-        result = LibMigration.getValues(account, result, true);
+        result = result.getValues(account, true);
         if (
             result.kresko.valSCDPBefore == 0 && result.kresko.valCollBefore == 0
         ) return result;
 
         if (result.kresko.valSCDPBefore != 0) {
             result.scdp = _handleSCDP(account);
+        } else {
+            result.scdp.asset = kissAddr;
+            result.scdp.destination = oneAddr;
         }
 
         if (result.kresko.valCollBefore != 0) {
@@ -36,7 +37,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
 
         this.emitTransfers(account);
 
-        result = LibMigration.getValues(account, result, false);
+        result = result.getValues(account, false);
 
         result.slippage = result.valueNow.pdiv(result.valueBefore);
         result.icdpColl = ms().txColl;
@@ -94,6 +95,10 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
             account,
             transfer.destination
         );
+        transfer.value = core.getAccountDepositValueSCDP(
+            account,
+            transfer.destination
+        );
 
         emit PositionTransferred(
             account,
@@ -105,7 +110,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
     }
 
     function _handleMinter(address account) internal {
-        Positions.getPositions(ms(), account);
+        ms().getPositions(account);
         if (ms().collValue == 0) return;
 
         _withdrawUncheck(account, 0);
@@ -140,20 +145,48 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
         }
     }
 
+    function _handleLeverage(address account) internal {
+        bool found = true;
+        Transfer storage coll;
+        Transfer storage debt;
+        while (found) {
+            (found, coll, debt) = ms().getLeverage();
+
+            if (coll.asset != debt.destination) {
+                _toAsset(
+                    debt.destination,
+                    coll.asset,
+                    _convertAmt(
+                        coll.asset,
+                        coll.amount - coll.amountTransferred,
+                        debt.destination,
+                        0
+                    )
+                );
+            }
+
+            _depositKopio(account, coll);
+            _mintKopioDebt(account, debt);
+        }
+    }
     function transferMinterPositions(address account) internal {
-        for (uint256 i; i < ms().txColl.length; i++) {
+        uint256 clen = ms().txColl.length;
+        if (clen == 0) return;
+
+        for (uint256 i; i < clen; i++) {
             Transfer storage item = ms().txColl[i];
-            if (item.amountTransferred != 0 || item.amount == 0) continue;
+            if (item.amount == 0) continue;
             if (isKrAsset(item.asset)) {
                 _toAsset(item.asset, item.destination, item.amount);
             }
             _depositKopio(account, item);
         }
 
-        for (uint256 i; i < ms().txDebt.length; i++) {
-            Transfer storage item = ms().txDebt[i];
-            if (item.amount == 0) continue;
-            _mintKopioDebt(account, item);
+        uint256 dlen = ms().txDebt.length;
+        if (dlen == 0) return;
+
+        for (uint256 i; i < dlen; i++) {
+            _mintKopioDebt(account, ms().txDebt[i]);
         }
 
         _handleLeverage(account);
@@ -161,7 +194,7 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
 
     function onUncheckedCollateralWithdraw(
         address account,
-        address collateral,
+        address,
         uint256,
         uint256,
         bytes memory data
@@ -169,26 +202,26 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
         if (msg.sender != kreskoAddr) revert InvalidSender(msg.sender);
 
         uint256 idx = abi.decode(data, (uint256));
+
         if (idx < ms().posColl.length - 1) {
-            ms().assetsUsed.pushUnique(collateral);
             _withdrawUncheck(account, ++idx);
         }
 
         uint256 feeValueApprox = ms().debtValue.pmul(3.5e2);
+
         bool didAddFees;
+        uint256 collIdx;
 
         for (uint256 i; i < ms().posColl.length; i++) {
             Pos storage coll = ms().posColl[i];
             if (!didAddFees && coll.value >= feeValueApprox) {
-                uint256 bal = IERC20(coll.a.addr).balanceOf(address(this));
-                uint256 forFees = _toAmount(coll, feeValueApprox);
+                didAddFees = true;
                 kresko.depositCollateral(
                     account,
                     coll.a.addr,
-                    bal < forFees ? bal : forFees
+                    amt(coll.a.addr, _toAmount(coll, feeValueApprox))
                 );
-
-                didAddFees = true;
+                collIdx = i;
             }
 
             for (uint256 j; j < ms().posDebt.length; j++) {
@@ -200,22 +233,19 @@ contract Migrator is ICollateralReceiver, MigrationLogic {
                 if (debtAmount == 0) continue;
                 uint256 burnAmount = _toDebtAsset(coll, debt, debtAmount);
                 if (burnAmount == 0) continue;
-
-                ms().assetsUsed.pushUnique(debt.a.addr);
                 _burn(
                     account,
                     debt.a.addr,
                     burnAmount > debtAmount ? debtAmount : burnAmount
                 );
 
-                if (bal(debt.a.addr) != 0) {
-                    _toAsset(debt.a.addr, coll.a.addr, bal(debt.a.addr));
-                }
+                uint256 balAfter = bal(debt.a.addr);
+                if (balAfter != 0) _toAsset(debt.a.addr, coll.a.addr, balAfter);
             }
         }
 
-        _withdrawAll(account, ms().posColl[0].a.addr);
+        _withdrawAll(account, ms().posColl[collIdx].a.addr);
 
-        return "";
+        return new bytes(0);
     }
 }

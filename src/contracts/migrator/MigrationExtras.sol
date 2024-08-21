@@ -99,6 +99,19 @@ contract MigrationExtras is IMigrationRouter, IMigrator {
         }
     }
 
+    function _sendDust(address account) private {
+        for (uint256 i; i < ms().krAssets.length; i++)
+            _sendIfDust(account, ms().krAssets[i]);
+        for (uint256 i; i < ms().exts.length; i++) {
+            _sendIfDust(account, ms().exts[i]);
+        }
+    }
+
+    function _sendIfDust(address account, address asset) private {
+        uint256 bal = IERC20(asset).balanceOf(address(this));
+        if (bal != 0) IERC20(asset).transfer(account, bal);
+    }
+
     function _kreskoApprovals(address asset) private {
         IERC20(asset).approve(kreskoAddr, type(uint256).max);
         IERC20(asset).approve(kissAddr, type(uint256).max);
@@ -115,26 +128,6 @@ contract MigrationExtras is IMigrationRouter, IMigrator {
     }
 
     function emitTransfers(address account) external override self {
-        for (uint256 i; i < ms().posColl.length; i++) {
-            Pos storage item = ms().posColl[i];
-            Transfer storage transfer = ms().txColl[i];
-            address toAddr = ms().getAsset[item.a.addr];
-            address assetAddr = toAddr != address(0) ? toAddr : item.a.addr;
-            uint256 bal = IERC20(assetAddr).balanceOf(address(this));
-            if (bal != 0) core.depositCollateral(account, assetAddr, bal);
-            transfer.amountTransferred = core.getAccountCollateralAmount(
-                account,
-                assetAddr
-            );
-            transfer.destination = assetAddr;
-            emit PositionTransferred(
-                account,
-                item.a.addr,
-                assetAddr,
-                item.amount,
-                transfer.amountTransferred
-            );
-        }
         for (uint256 i; i < ms().posDebt.length; i++) {
             Pos storage item = ms().posDebt[i];
             Transfer storage transfer = ms().txDebt[i];
@@ -155,6 +148,28 @@ contract MigrationExtras is IMigrationRouter, IMigrator {
             );
         }
 
+        for (uint256 i; i < ms().posColl.length; i++) {
+            Pos storage item = ms().posColl[i];
+            Transfer storage transfer = ms().txColl[i];
+            address toAddr = ms().getAsset[item.a.addr];
+            address assetAddr = toAddr != address(0) ? toAddr : item.a.addr;
+            uint256 bal = IERC20(assetAddr).balanceOf(address(this));
+            if (bal != 0) core.depositCollateral(account, assetAddr, bal);
+            transfer.amountTransferred = core.getAccountCollateralAmount(
+                account,
+                assetAddr
+            );
+            transfer.destination = assetAddr;
+            emit PositionTransferred(
+                account,
+                item.a.addr,
+                assetAddr,
+                item.amount,
+                transfer.amountTransferred
+            );
+        }
+
+        _sendDust(account);
         _setKredits(account);
     }
 

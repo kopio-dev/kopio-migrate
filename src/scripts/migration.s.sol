@@ -16,14 +16,18 @@ contract MigrationDeploy is SafeScript, Base {
     using PLog for *;
     using Utils for *;
 
-    Migrator migrator = Migrator(0xaaaaaAaAaAa186774266Ea9b3FC0B588B3232795);
-    MigrationRouter router;
     address routerAddr = 0xaaaaaAaAaAa186774266Ea9b3FC0B588B3232795;
+    Migrator migrator = Migrator(routerAddr);
+    MigrationRouter router = MigrationRouter(payable(routerAddr));
 
     Route[] internal routes;
 
     function setUp() public virtual {
         base("MNEMONIC_KOPIO", "arbitrum");
+    }
+
+    function safeSends() external broadcasted(safe) {
+        core.setMinDebtValue(0.01e8);
     }
 
     function deployPythUpdater() external broadcastedById(0) {
@@ -43,18 +47,13 @@ contract MigrationDeploy is SafeScript, Base {
 
     function updateMigrationRouter() public broadcastedById(0) {
         router = MigrationRouter(payable(routerAddr));
-        Route[] memory funcs = new Route[](2);
-
-        funcs[0] = Route({
-            impl: address(new Migrator()),
-            sig: Migrator.migrate.selector
-        });
-        funcs[1] = Route({
-            impl: funcs[0].impl,
-            sig: Migrator.onUncheckedCollateralWithdraw.selector
-        });
-        router.setRoute(funcs[0]);
-        router.setRoute(funcs[1]);
+        Route[] memory funcs = getRoutes(
+            address(new Migrator()),
+            address(new MigrationExtras())
+        );
+        for (uint256 i; i < funcs.length; i++) {
+            router.setRoute(funcs[i]);
+        }
     }
 
     function deployMigrationRouter(

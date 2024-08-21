@@ -5,11 +5,6 @@ import {ms, cs, Enums} from "kresko/core/States.sol";
 
 abstract contract TestUsers {
     address[] testUsers = [
-        0x0045E14AB4cafdCE9dFd2D2299fbACb593175b9a,
-        0x01287890fA522335A858ac7986c949aBf7a3D5a8,
-        0x0a7f988B6cEa3081EBa2896C4f0793c19d2A775E,
-        0x0b4dD0D15616Db547bA4AEEc3459C01e29B9de76,
-        0x13337e3C4a9aA3444e6AB80ea15AB3c3416d84Cd,
         0x1469a9B82DC41c49cb29F7b764Ba4268993C9239,
         0x19B95041fe2E2c4969C9C45Df664562F7B9Cd3Bb,
         0x1AeAC9C64E04a40DD476Ac8eCEB02A4c5eD0d205,

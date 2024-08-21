@@ -9,7 +9,7 @@
     "contracts"
   ],
   "solidity.test": {
-    "executeOnSave": true,
+    "executeOnSave": false,
     "verbosity": 3
   },
   "solidity.compiler": {
